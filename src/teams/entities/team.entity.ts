@@ -1,7 +1,8 @@
 import {
   Column,
   Entity,
-  ManyToMany,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   Unique,
@@ -41,8 +42,15 @@ export class Team {
   })
   registrations?: Registration[];
 
-  @ManyToMany('GroupPhase', (group: GroupPhase) => group.teams)
-  groups?: GroupPhase[];
+  // Grupo 1 — n Equipo (diagrama). Un equipo pertenece como máximo a un grupo
+  // a la vez; al retirarlo del grupo se deja en null.
+  @ManyToOne('GroupPhase', (group: GroupPhase) => group.teams, {
+    cascade: false,
+    nullable: true,
+    onDelete: 'NO ACTION',
+  })
+  @JoinColumn({ name: 'group_id' })
+  group?: GroupPhase | null;
 
   @OneToMany(() => Match, (match) => match.homeTeam, { cascade: false })
   homeMatches?: Match[];

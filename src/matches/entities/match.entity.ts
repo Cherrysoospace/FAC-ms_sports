@@ -4,6 +4,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Phase } from '../../phases/entities/phase.entity';
@@ -71,11 +72,13 @@ export class Match {
   @JoinColumn({ name: 'away_team_id' })
   awayTeam!: Team;
 
-  @ManyToOne(() => Ball, (ball) => ball.matches, {
+  // Partido 1 — 1 Pelota (diagrama): cada partido usa su propia pelota
+  // registrada, y esa pelota no puede asignarse a otro partido.
+  @OneToOne(() => Ball, (ball) => ball.match, {
     cascade: false,
     nullable: true,
     onDelete: 'NO ACTION',
   })
   @JoinColumn({ name: 'ball_id' })
-  ball?: Ball;
+  ball?: Ball | null;
 }

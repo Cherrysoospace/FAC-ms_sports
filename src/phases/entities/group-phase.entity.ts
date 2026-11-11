@@ -1,9 +1,16 @@
-import { ChildEntity, Column, JoinTable, ManyToMany, Unique } from 'typeorm';
+import { ChildEntity, Column, OneToMany, Unique } from 'typeorm';
 import { Phase } from './phase.entity';
 import { Team } from '../../teams/entities/team.entity';
 
-// Grupos paralelos (A, B...) comparten phase_order dentro de un torneo;
-// lo que no se repite es el nombre del grupo en ese orden.
+/**
+ * Grupo es subclase de Fase (diagrama de clases).
+ *
+ * Cada registro es UN grupo concreto (A, B, C...). La "fase de grupos" de un
+ * torneo es el conjunto de grupos que comparten tournament + phase_order, y
+ * esos grupos deben compartir también startDate y endDate (lo valida el servicio).
+ *
+ * Grupo 1 — n Equipo (diagrama): la llave foránea group_id vive en teams.
+ */
 @ChildEntity('GROUP')
 @Unique('UQ_phases_tournament_order_group', ['tournament', 'order', 'groupName'])
 export class GroupPhase extends Phase {
@@ -13,11 +20,6 @@ export class GroupPhase extends Phase {
   @Column({ name: 'qualifiers_count', type: 'int', nullable: true })
   qualifiersCount?: number;
 
-  @ManyToMany(() => Team, (team) => team.groups)
-  @JoinTable({
-    name: 'group_teams',
-    joinColumn: { name: 'group_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'team_id', referencedColumnName: 'id' },
-  })
+  @OneToMany(() => Team, (team) => team.group, { cascade: false })
   teams?: Team[];
 }

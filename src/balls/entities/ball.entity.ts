@@ -1,4 +1,4 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Match } from '../../matches/entities/match.entity';
 
 @Entity('balls')
@@ -18,6 +18,7 @@ export class Ball {
   @Column({ name: 'active', type: 'boolean', default: true })
   active!: boolean;
 
-  @OneToMany(() => Match, (match) => match.ball, { cascade: false })
-  matches?: Match[];
+  // Partido 1 — 1 Pelota (diagrama). El lado dueño (ball_id) está en matches.
+  @OneToOne(() => Match, (match) => match.ball)
+  match?: Match | null;
 }
