@@ -3,6 +3,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { SportsModule } from './sports/sports.module';
+import { BallsModule } from './balls/balls.module';
+import { TournamentsModule } from './tournaments/tournaments.module';
+import { PhasesModule } from './phases/phases.module';
 
 @Module({
   imports: [
@@ -21,6 +25,10 @@ import { AppService } from './app.service';
         synchronize: false,
       }),
     }),
+    SportsModule,
+    BallsModule,
+    TournamentsModule,
+    PhasesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
