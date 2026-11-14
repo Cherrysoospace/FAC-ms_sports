@@ -47,14 +47,14 @@ export class Match {
   @JoinColumn({ name: 'phase_id' })
   phase!: Phase;
 
-  // Escenario "cuando corresponda"
+  // Escenario 1 — n Partido (diagrama): todo partido tiene exactamente un escenario.
   @ManyToOne(() => Venue, (venue) => venue.matches, {
     cascade: false,
-    nullable: true,
+    nullable: false,
     onDelete: 'NO ACTION',
   })
   @JoinColumn({ name: 'venue_id' })
-  venue?: Venue;
+  venue!: Venue;
 
   @ManyToOne(() => Team, (team) => team.homeMatches, {
     cascade: false,
@@ -72,13 +72,12 @@ export class Match {
   @JoinColumn({ name: 'away_team_id' })
   awayTeam!: Team;
 
-  // Partido 1 — 1 Pelota (diagrama): cada partido usa su propia pelota
-  // registrada, y esa pelota no puede asignarse a otro partido.
+  // Partido 1 — 1 Pelota (diagrama): pelota obligatoria y única por partido (índice único en ball_id).
   @OneToOne(() => Ball, (ball) => ball.match, {
     cascade: false,
-    nullable: true,
+    nullable: false,
     onDelete: 'NO ACTION',
   })
   @JoinColumn({ name: 'ball_id' })
-  ball?: Ball | null;
+  ball!: Ball;
 }
