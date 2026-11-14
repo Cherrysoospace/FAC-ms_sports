@@ -61,6 +61,12 @@ export class VenuesService {
     return venue;
   }
 
+  // Ids de los escenarios que contienen a `id` (padre, abuelo... hasta la
+  // raíz). Lo usa Escenario-Torneo para heredar la habilitación del complejo.
+  findAncestorIds(id: number): Promise<number[]> {
+    return this.venuesRepository.findAncestorIds(id);
+  }
+
   async create(dto: CreateVenueDto): Promise<VenueResponseDto> {
     const parent =
       dto.parentId != null ? await this.getActiveParent(dto.parentId) : null;
