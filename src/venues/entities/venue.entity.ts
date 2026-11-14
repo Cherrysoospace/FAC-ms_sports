@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { TournamentVenue } from '../../tournament-venues/entities/tournament-venue.entity';
 import { Match } from '../../matches/entities/match.entity';
+import { Location } from '../../locations/entities/location.entity';
 
 @Entity('venues')
 export class Venue {
@@ -44,4 +45,8 @@ export class Venue {
 
   @OneToMany(() => Match, (match) => match.venue, { cascade: false })
   matches?: Match[];
+
+  // Escenario 1 — n Localidad (la llave venue_id está en locations)
+  @OneToMany(() => Location, (location) => location.venue, { cascade: false })
+  locations?: Location[];
 }

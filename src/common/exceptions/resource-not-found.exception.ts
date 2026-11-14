@@ -6,9 +6,11 @@ export class ResourceNotFoundException extends NotFoundException {
     super(message);
   }
 
+  /**
+   * Mensaje neutro en género, sirve para cualquier recurso:
+   * "Localidad con id 3 no existe", "Torneo con id 7 no existe".
+   */
   static of(resource: string, id: number): ResourceNotFoundException {
-    return new ResourceNotFoundException(
-      `${resource} no encontrado con id: ${id}`,
-    );
+    return new ResourceNotFoundException(`${resource} con id ${id} no existe`);
   }
 }
