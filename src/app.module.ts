@@ -8,6 +8,8 @@ import { BallsModule } from './balls/balls.module';
 import { TournamentsModule } from './tournaments/tournaments.module';
 import { PhasesModule } from './phases/phases.module';
 import { RegistrationsModule } from './registrations/registrations.module';
+import { TeamsModule } from './teams/teams.module';
+import { TeamSportsModule } from './team-sports/team-sports.module';
 
 @Module({
   imports: [
@@ -31,6 +33,8 @@ import { RegistrationsModule } from './registrations/registrations.module';
     TournamentsModule,
     PhasesModule,
     RegistrationsModule,
+    TeamsModule,
+    TeamSportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
