@@ -7,26 +7,20 @@ import { TeamSport } from '../../team-sports/entities/team-sport.entity';
 import { Registration } from '../../registrations/entities/registration.entity';
 import { RegistrationStatus } from '../../registrations/enums/registration-status.enum';
 import { Match } from '../../matches/entities/match.entity';
-import { TournamentStatus } from '../../tournaments/enums/tournament-status.enum';
+import { TournamentStatusPolicy } from '../../tournaments/policies/tournament-status.policy';
 import { TeamQueryDto } from '../dto/team-query.dto';
 import { TeamSportSummaryDto } from '../dto/team-response.dto';
-
-interface CountRow {
-  id: number | string;
-  total: number | string;
-}
+import {
+  CountRow,
+  escapeLike,
+  toCountMap,
+} from '../../common/database/query.util';
 
 interface SportRow {
   teamId: number | string;
   sportId: number | string;
   sportName: string;
 }
-
-// Torneos que ya no usan a sus equipos inscritos.
-const CLOSED_TOURNAMENT_STATUSES = [
-  TournamentStatus.FINISHED,
-  TournamentStatus.CANCELLED,
-];
 
 // Consultas propias del módulo de equipos.
 @Injectable()
@@ -52,10 +46,8 @@ export class TeamsRepository {
       .addOrderBy('team.modality', 'ASC');
 
     if (query.search) {
-      // Se escapan los comodines de LIKE para buscar el texto literal.
-      const escaped = query.search.replace(/[\\%_]/g, (c) => `\\${c}`);
       qb.andWhere('LOWER(team.name) LIKE LOWER(:search)', {
-        search: `%${escaped}%`,
+        search: `%${escapeLike(query.search)}%`,
       });
     }
     if (query.modality !== undefined) {
@@ -132,7 +124,7 @@ export class TeamsRepository {
       })
       .groupBy('registration.team_id')
       .getRawMany<CountRow>();
-    return new Map(rows.map((row) => [Number(row.id), Number(row.total)]));
+    return toCountMap(rows);
   }
 
   countActiveRegistrations(teamId: number): Promise<number> {
@@ -141,7 +133,7 @@ export class TeamsRepository {
     });
   }
 
-  // Inscripciones ACTIVE en torneos que no han finalizado ni se cancelaron.
+  // Inscripciones ACTIVE en torneos que no están cerrados (TournamentStatusPolicy.CLOSED).
   findOpenActiveRegistrations(teamId: number): Promise<Registration[]> {
     return this.registrationRepository
       .createQueryBuilder('registration')
@@ -151,7 +143,7 @@ export class TeamsRepository {
         status: RegistrationStatus.ACTIVE,
       })
       .andWhere('tournament.status NOT IN (:...closed)', {
-        closed: CLOSED_TOURNAMENT_STATUSES,
+        closed: [...TournamentStatusPolicy.CLOSED],
       })
       .orderBy('tournament.name', 'ASC')
       .getMany();

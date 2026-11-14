@@ -6,10 +6,13 @@ import { Sport } from '../sports/entities/sport.entity';
 import { TournamentStatus } from './enums/tournament-status.enum';
 import { TournamentsRepository } from './repositories/tournaments.repository';
 import { TournamentMapper } from './mappers/tournament.mapper';
+import { TournamentStatusPolicy } from './policies/tournament-status.policy';
+import { TournamentDatesValidator } from './policies/tournament-dates.validator';
 import { CreateTournamentDto } from './dto/create-tournament.dto';
 import { UpdateTournamentDto } from './dto/update-tournament.dto';
 import { TournamentQueryDto } from './dto/tournament-query.dto';
 import { TournamentResponseDto } from './dto/tournament-response.dto';
+import { joinList, plural } from '../common/text/spanish-list';
 import {
   ApplicationException,
   BusinessRuleException,
@@ -17,41 +20,10 @@ import {
   ResourceNotFoundException,
 } from '../common/exceptions';
 
-// Transiciones de estado permitidas: solo se avanza, y se puede cancelar
-// desde cualquier estado salvo FINISHED.
-const ALLOWED_TRANSITIONS: Record<TournamentStatus, TournamentStatus[]> = {
-  [TournamentStatus.PLANNED]: [
-    TournamentStatus.REGISTRATION_OPEN,
-    TournamentStatus.CANCELLED,
-  ],
-  [TournamentStatus.REGISTRATION_OPEN]: [
-    TournamentStatus.IN_PROGRESS,
-    TournamentStatus.CANCELLED,
-  ],
-  [TournamentStatus.IN_PROGRESS]: [
-    TournamentStatus.FINISHED,
-    TournamentStatus.CANCELLED,
-  ],
-  [TournamentStatus.FINISHED]: [],
-  [TournamentStatus.CANCELLED]: [],
-};
-
-// En estos estados ya no se pueden cambiar nombre, deporte ni fechas.
-const LOCKED_STATUSES: TournamentStatus[] = [
-  TournamentStatus.IN_PROGRESS,
-  TournamentStatus.FINISHED,
-  TournamentStatus.CANCELLED,
-];
-
-const MIN_REGISTRATIONS_TO_START = 2;
-
-interface TournamentDates {
-  startDate: string;
-  endDate: string;
-  registrationOpensAt: Date;
-  registrationClosesAt: Date;
-}
-
+/**
+ * Orquesta los casos de uso del torneo. Las reglas viven en
+ * TournamentStatusPolicy (estados) y TournamentDatesValidator (fechas).
+ */
 @Injectable()
 export class TournamentsService {
   constructor(
@@ -95,7 +67,7 @@ export class TournamentsService {
   async create(dto: CreateTournamentDto): Promise<TournamentResponseDto> {
     const sport = await this.getActiveSport(dto.sportId);
     await this.assertNameAvailable(dto.name, sport);
-    this.assertValidDates({
+    TournamentDatesValidator.assertValid({
       startDate: dto.startDate,
       endDate: dto.endDate,
       registrationOpensAt: new Date(dto.registrationOpensAt),
@@ -113,41 +85,17 @@ export class TournamentsService {
     dto: UpdateTournamentDto,
   ): Promise<TournamentResponseDto> {
     const tournament = await this.getTournamentOrFail(id);
-    const currentStatus = tournament.status;
 
     // e) Torneo iniciado, finalizado o cancelado: solo status y active.
-    if (LOCKED_STATUSES.includes(currentStatus)) {
-      const locked = this.lockedFieldsChanged(tournament, dto);
-      if (locked.length > 0) {
-        throw new ApplicationException(
-          ErrorCase.INVALID_OPERATION,
-          `No se puede cambiar ${this.joinList(locked)} de un torneo en ` +
-            `estado ${currentStatus}`,
-        );
-      }
-    }
+    this.assertLockedFieldsUnchanged(tournament, dto);
 
     // a) Deporte: solo se valida si cambia.
     const sportChanges =
       dto.sportId !== undefined && dto.sportId !== tournament.sport.id;
-    let newSport: Sport | undefined;
-    if (sportChanges && dto.sportId !== undefined) {
-      const [registrations, phases] = await Promise.all([
-        this.tournamentsRepository.countRegistrations(id),
-        this.tournamentsRepository.countPhases(id),
-      ]);
-      const dependencies = [
-        this.plural(registrations, 'inscripción', 'inscripciones'),
-        this.plural(phases, 'fase', 'fases'),
-      ].filter((d): d is string => d !== null);
-      if (dependencies.length > 0) {
-        throw new BusinessRuleException(
-          'No se puede cambiar el deporte porque el torneo ya tiene ' +
-            this.joinList(dependencies),
-        );
-      }
-      newSport = await this.getActiveSport(dto.sportId);
-    }
+    const newSport =
+      sportChanges && dto.sportId !== undefined
+        ? await this.getSportForChange(id, dto.sportId)
+        : undefined;
 
     // b) Nombre único por deporte (con el nombre y deporte finales).
     const nameChanges = dto.name !== undefined && dto.name !== tournament.name;
@@ -160,29 +108,12 @@ export class TournamentsService {
     }
 
     // c) Fechas: se validan los valores finales si cambia alguna.
-    if (
-      dto.startDate !== undefined ||
-      dto.endDate !== undefined ||
-      dto.registrationOpensAt !== undefined ||
-      dto.registrationClosesAt !== undefined
-    ) {
-      this.assertValidDates({
-        startDate: dto.startDate ?? tournament.startDate,
-        endDate: dto.endDate ?? tournament.endDate,
-        registrationOpensAt:
-          dto.registrationOpensAt !== undefined
-            ? new Date(dto.registrationOpensAt)
-            : tournament.registrationOpensAt,
-        registrationClosesAt:
-          dto.registrationClosesAt !== undefined
-            ? new Date(dto.registrationClosesAt)
-            : tournament.registrationClosesAt,
-      });
-    }
+    const dates = TournamentDatesValidator.mergeForUpdate(tournament, dto);
+    if (dates) TournamentDatesValidator.assertValid(dates);
 
     // d) Estado.
-    if (dto.status !== undefined && dto.status !== currentStatus) {
-      await this.assertStatusTransition(id, currentStatus, dto.status);
+    if (dto.status !== undefined && dto.status !== tournament.status) {
+      await this.assertStatusTransition(id, tournament.status, dto.status);
     }
 
     await this.tournamentRepository.save(
@@ -201,14 +132,14 @@ export class TournamentsService {
     ]);
 
     const dependencies = [
-      this.plural(phases, 'fase', 'fases'),
-      this.plural(registrations, 'inscripción', 'inscripciones'),
-      this.plural(venues, 'escenario', 'escenarios'),
+      plural(phases, 'fase', 'fases'),
+      plural(registrations, 'inscripción', 'inscripciones'),
+      plural(venues, 'escenario', 'escenarios'),
     ].filter((d): d is string => d !== null);
 
     if (dependencies.length > 0) {
       throw new BusinessRuleException(
-        `No se puede eliminar porque tiene ${this.joinList(dependencies)} ` +
+        `No se puede eliminar porque tiene ${joinList(dependencies)} ` +
           'asociados. Cámbielo a CANCELLED o desactívelo con ' +
           'PATCH { "active": false }',
       );
@@ -232,6 +163,25 @@ export class TournamentsService {
     return sport;
   }
 
+  // El deporte no cambia si el torneo ya tiene inscripciones o fases.
+  private async getSportForChange(id: number, sportId: number): Promise<Sport> {
+    const [registrations, phases] = await Promise.all([
+      this.tournamentsRepository.countRegistrations(id),
+      this.tournamentsRepository.countPhases(id),
+    ]);
+    const dependencies = [
+      plural(registrations, 'inscripción', 'inscripciones'),
+      plural(phases, 'fase', 'fases'),
+    ].filter((d): d is string => d !== null);
+    if (dependencies.length > 0) {
+      throw new BusinessRuleException(
+        'No se puede cambiar el deporte porque el torneo ya tiene ' +
+          joinList(dependencies),
+      );
+    }
+    return this.getActiveSport(sportId);
+  }
+
   private async assertNameAvailable(
     name: string,
     sport: Sport,
@@ -251,54 +201,32 @@ export class TournamentsService {
     }
   }
 
-  private assertValidDates(dates: TournamentDates): void {
-    if (
-      dates.registrationOpensAt.getTime() >=
-      dates.registrationClosesAt.getTime()
-    ) {
-      throw new ApplicationException(
-        ErrorCase.INVALID_OPERATION,
-        'La apertura de inscripciones debe ser anterior a su cierre',
-      );
-    }
-    if (this.toDateOnly(dates.registrationClosesAt) > dates.startDate) {
-      throw new ApplicationException(
-        ErrorCase.INVALID_OPERATION,
-        'El cierre de inscripciones debe ser el mismo día o antes de la ' +
-          'fecha de inicio del torneo',
-      );
-    }
-    // Las fechas YYYY-MM-DD se pueden comparar como texto.
-    if (dates.startDate > dates.endDate) {
-      throw new ApplicationException(
-        ErrorCase.INVALID_OPERATION,
-        'La fecha de inicio debe ser igual o anterior a la fecha de fin',
-      );
-    }
-  }
-
+  // Solo cuenta las inscripciones si la transición lo necesita (iniciar).
   private async assertStatusTransition(
     id: number,
     from: TournamentStatus,
     to: TournamentStatus,
   ): Promise<void> {
-    if (!ALLOWED_TRANSITIONS[from].includes(to)) {
+    const activeRegistrations =
+      to === TournamentStatus.IN_PROGRESS &&
+      TournamentStatusPolicy.canTransition(from, to)
+        ? await this.tournamentsRepository.countActiveRegistrations(id)
+        : 0;
+    TournamentStatusPolicy.assertTransition(from, to, activeRegistrations);
+  }
+
+  private assertLockedFieldsUnchanged(
+    tournament: Tournament,
+    dto: UpdateTournamentDto,
+  ): void {
+    if (!TournamentStatusPolicy.isLocked(tournament.status)) return;
+    const locked = this.lockedFieldsChanged(tournament, dto);
+    if (locked.length > 0) {
       throw new ApplicationException(
         ErrorCase.INVALID_OPERATION,
-        `No se puede pasar de ${from} a ${to}`,
+        `No se puede cambiar ${joinList(locked)} de un torneo en ` +
+          `estado ${tournament.status}`,
       );
-    }
-    if (to === TournamentStatus.IN_PROGRESS) {
-      const active =
-        await this.tournamentsRepository.countActiveRegistrations(id);
-      if (active < MIN_REGISTRATIONS_TO_START) {
-        throw new ApplicationException(
-          ErrorCase.INVALID_OPERATION,
-          `Para iniciar el torneo se necesitan al menos ` +
-            `${MIN_REGISTRATIONS_TO_START} inscripciones activas ` +
-            `(tiene ${active})`,
-        );
-      }
     }
   }
 
@@ -325,22 +253,5 @@ export class TournamentsService {
           tournament.registrationClosesAt.getTime());
     if (datesChanged) changed.push('las fechas');
     return changed;
-  }
-
-  // Fecha local YYYY-MM-DD de un datetime (misma zona con que se guarda).
-  private toDateOnly(date: Date): string {
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${date.getFullYear()}-${month}-${day}`;
-  }
-
-  private plural(count: number, singular: string, pluralForm: string) {
-    if (count === 0) return null;
-    return `${count} ${count === 1 ? singular : pluralForm}`;
-  }
-
-  private joinList(items: string[]): string {
-    if (items.length === 1) return items[0];
-    return `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`;
   }
 }

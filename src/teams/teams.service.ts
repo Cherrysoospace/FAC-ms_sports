@@ -9,6 +9,7 @@ import { CreateTeamDto } from './dto/create-team.dto';
 import { UpdateTeamDto } from './dto/update-team.dto';
 import { TeamQueryDto } from './dto/team-query.dto';
 import { TeamResponseDto } from './dto/team-response.dto';
+import { formatCount, joinList, plural } from '../common/text/spanish-list';
 import {
   ApplicationException,
   BusinessRuleException,
@@ -92,7 +93,7 @@ export class TeamsService {
       if (active > 0) {
         throw new BusinessRuleException(
           `No se puede cambiar la modalidad: el equipo tiene ` +
-            `${this.plural(active, 'inscripción activa', 'inscripciones activas')}`,
+            `${formatCount(active, 'inscripción activa', 'inscripciones activas')}`,
         );
       }
     }
@@ -105,7 +106,7 @@ export class TeamsService {
         throw new BusinessRuleException(
           `No se puede desactivar: el equipo está inscrito en ` +
             `${names.length === 1 ? 'el torneo' : 'los torneos'} ` +
-            `${this.joinList(names)}, que aún no ha${names.length === 1 ? '' : 'n'} finalizado`,
+            `${joinList(names)}, que aún no ha${names.length === 1 ? '' : 'n'} finalizado`,
         );
       }
     }
@@ -124,15 +125,15 @@ export class TeamsService {
     ]);
 
     const dependencies = [
-      this.pluralOrNull(sports, 'deporte', 'deportes'),
-      this.pluralOrNull(registrations, 'inscripción', 'inscripciones'),
-      this.pluralOrNull(matches, 'partido', 'partidos'),
+      plural(sports, 'deporte', 'deportes'),
+      plural(registrations, 'inscripción', 'inscripciones'),
+      plural(matches, 'partido', 'partidos'),
       team.group ? `el grupo ${team.group.groupName}` : null,
     ].filter((d): d is string => d !== null);
 
     if (dependencies.length > 0) {
       throw new BusinessRuleException(
-        `No se puede eliminar porque tiene ${this.joinList(dependencies)} ` +
+        `No se puede eliminar porque tiene ${joinList(dependencies)} ` +
           'asociados. Desactívelo con PATCH { "active": false }',
       );
     }
@@ -157,18 +158,5 @@ export class TeamsService {
         `Ya existe el equipo ${name} en la modalidad ${TEAM_MODALITY_LABELS[modality]}`,
       );
     }
-  }
-
-  private plural(count: number, singular: string, pluralForm: string) {
-    return `${count} ${count === 1 ? singular : pluralForm}`;
-  }
-
-  private pluralOrNull(count: number, singular: string, pluralForm: string) {
-    return count === 0 ? null : this.plural(count, singular, pluralForm);
-  }
-
-  private joinList(items: string[]): string {
-    if (items.length === 1) return items[0];
-    return `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`;
   }
 }

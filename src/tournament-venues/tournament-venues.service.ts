@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TournamentVenue } from './entities/tournament-venue.entity';
 import { Tournament } from '../tournaments/entities/tournament.entity';
-import { TournamentStatus } from '../tournaments/enums/tournament-status.enum';
+import { TournamentStatusPolicy } from '../tournaments/policies/tournament-status.policy';
 import { TournamentsService } from '../tournaments/tournaments.service';
 import { VenuesService } from '../venues/venues.service';
 import { TournamentVenuesRepository } from './repositories/tournament-venues.repository';
@@ -17,12 +17,6 @@ import {
   ErrorCase,
   ResourceNotFoundException,
 } from '../common/exceptions';
-
-// Torneos cuyos escenarios ya no se pueden cambiar.
-const CLOSED_TOURNAMENT_STATUSES = [
-  TournamentStatus.FINISHED,
-  TournamentStatus.CANCELLED,
-];
 
 @Injectable()
 export class TournamentVenuesService {
@@ -138,7 +132,9 @@ export class TournamentVenuesService {
     tournamentId: number,
     venueId: number,
   ): Promise<number> {
-    const counts = await this.countScheduledMatches([{ tournamentId, venueId }]);
+    const counts = await this.countScheduledMatches([
+      { tournamentId, venueId },
+    ]);
     return counts.get(`${tournamentId}-${venueId}`) ?? 0;
   }
 
@@ -167,21 +163,22 @@ export class TournamentVenuesService {
 
     // Ruta de cada escenario con partidos: [escenario, padre, abuelo, ...]
     const matchVenueIds = [
-      ...new Set([...matchCounts.keys()].map((key) => Number(key.split('-')[1]))),
+      ...new Set(
+        [...matchCounts.keys()].map((key) => Number(key.split('-')[1])),
+      ),
     ];
     const pathByVenue = new Map<number, number[]>(
       await Promise.all(
-        matchVenueIds.map(
-          async (id): Promise<[number, number[]]> => [
-            id,
-            [id, ...(await this.venuesService.findAncestorIds(id))],
-          ],
-        ),
+        matchVenueIds.map(async (id): Promise<[number, number[]]> => [
+          id,
+          [id, ...(await this.venuesService.findAncestorIds(id))],
+        ]),
       ),
     );
 
     for (const { tournamentId, venueId } of pairs) {
-      const enabled = enabledByTournament.get(tournamentId) ?? new Set<number>();
+      const enabled =
+        enabledByTournament.get(tournamentId) ?? new Set<number>();
       let total = 0;
 
       for (const [key, count] of matchCounts) {
@@ -218,8 +215,9 @@ export class TournamentVenuesService {
     return association;
   }
 
+  // Los escenarios de un torneo cerrado (FINISHED o CANCELLED) ya no cambian.
   private assertTournamentEditable(tournament: Tournament): void {
-    if (CLOSED_TOURNAMENT_STATUSES.includes(tournament.status)) {
+    if (TournamentStatusPolicy.isClosed(tournament.status)) {
       throw new ApplicationException(
         ErrorCase.INVALID_OPERATION,
         'No se pueden cambiar los escenarios de un torneo finalizado o cancelado',

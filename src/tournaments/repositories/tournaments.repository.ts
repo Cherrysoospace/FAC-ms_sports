@@ -7,12 +7,12 @@ import { Registration } from '../../registrations/entities/registration.entity';
 import { RegistrationStatus } from '../../registrations/enums/registration-status.enum';
 import { TournamentVenue } from '../../tournament-venues/entities/tournament-venue.entity';
 import { TournamentQueryDto } from '../dto/tournament-query.dto';
-import { TournamentCounts } from '../mappers/tournament.mapper';
-
-interface CountRow {
-  tournamentId: number | string;
-  total: number | string;
-}
+import { TournamentCounts } from '../types/tournament-counts';
+import {
+  CountRow,
+  escapeLike,
+  toCountMap,
+} from '../../common/database/query.util';
 
 // Consultas propias del módulo de torneos.
 @Injectable()
@@ -45,10 +45,8 @@ export class TournamentsRepository {
       qb.andWhere('tournament.active = :active', { active: query.active });
     }
     if (query.search) {
-      // Se escapan los comodines de LIKE para buscar el texto literal.
-      const escaped = query.search.replace(/[\\%_]/g, (c) => `\\${c}`);
       qb.andWhere('LOWER(tournament.name) LIKE LOWER(:search)', {
-        search: `%${escaped}%`,
+        search: `%${escapeLike(query.search)}%`,
       });
     }
 
@@ -103,14 +101,11 @@ export class TournamentsRepository {
   ): Promise<Map<number, TournamentCounts>> {
     const counts = new Map<number, TournamentCounts>();
     if (ids.length === 0) return counts;
-    for (const id of ids) {
-      counts.set(id, { registrationsCount: 0, phasesCount: 0 });
-    }
 
     const [registrationRows, phaseRows] = await Promise.all([
       this.registrationRepository
         .createQueryBuilder('registration')
-        .select('registration.tournament_id', 'tournamentId')
+        .select('registration.tournament_id', 'id')
         .addSelect('COUNT(*)', 'total')
         .where('registration.tournament_id IN (:...ids)', { ids })
         .andWhere('registration.status = :status', {
@@ -120,22 +115,21 @@ export class TournamentsRepository {
         .getRawMany<CountRow>(),
       this.phaseRepository
         .createQueryBuilder('phase')
-        .select('phase.tournament_id', 'tournamentId')
+        .select('phase.tournament_id', 'id')
         .addSelect('COUNT(*)', 'total')
         .where('phase.tournament_id IN (:...ids)', { ids })
         .groupBy('phase.tournament_id')
         .getRawMany<CountRow>(),
     ]);
 
-    for (const row of registrationRows) {
-      const entry = counts.get(Number(row.tournamentId));
-      if (entry) entry.registrationsCount = Number(row.total);
+    const registrations = toCountMap(registrationRows);
+    const phases = toCountMap(phaseRows);
+    for (const id of ids) {
+      counts.set(id, {
+        registrationsCount: registrations.get(id) ?? 0,
+        phasesCount: phases.get(id) ?? 0,
+      });
     }
-    for (const row of phaseRows) {
-      const entry = counts.get(Number(row.tournamentId));
-      if (entry) entry.phasesCount = Number(row.total);
-    }
-
     return counts;
   }
 }

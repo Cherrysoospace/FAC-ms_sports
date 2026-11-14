@@ -10,9 +10,7 @@ import {
 } from 'class-validator';
 import { TeamModality } from '../enums/team-modality.enum';
 import { TEAM_MODALITY_MESSAGE } from './create-team.dto';
-
-const toBoolean = ({ value }: { value: unknown }): unknown =>
-  value === undefined ? undefined : value === 'true' || value === true;
+import { ToBoolean } from '../../common/validation';
 
 // Filtros de GET /teams
 export class TeamQueryDto {
@@ -22,14 +20,16 @@ export class TeamQueryDto {
   )
   @IsOptional()
   @IsString({ message: 'La búsqueda debe ser texto' })
-  @MaxLength(120, { message: 'La búsqueda no puede superar los 120 caracteres' })
+  @MaxLength(120, {
+    message: 'La búsqueda no puede superar los 120 caracteres',
+  })
   search?: string;
 
   @IsOptional()
   @IsEnum(TeamModality, { message: TEAM_MODALITY_MESSAGE })
   modality?: TeamModality;
 
-  @Transform(toBoolean)
+  @ToBoolean()
   @IsOptional()
   @IsBoolean({ message: 'El filtro de activos debe ser verdadero o falso' })
   active?: boolean;

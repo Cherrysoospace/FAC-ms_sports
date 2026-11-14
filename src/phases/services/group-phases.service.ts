@@ -6,11 +6,9 @@ import { Team } from '../../teams/entities/team.entity';
 import { Registration } from '../../registrations/entities/registration.entity';
 import { RegistrationStatus } from '../../registrations/enums/registration-status.enum';
 import { TournamentsService } from '../../tournaments/tournaments.service';
+import { TournamentStatusPolicy } from '../../tournaments/policies/tournament-status.policy';
 import { PhasesRepository } from '../repositories/phases.repository';
-import {
-  CLOSED_TOURNAMENT_STATUSES,
-  PhaseRulesService,
-} from './phase-rules.service';
+import { PhaseRulesService } from './phase-rules.service';
 import { GroupPhaseMapper } from '../mappers/group-phase.mapper';
 import { CreateGroupPhaseDto } from '../dto/create-group-phase.dto';
 import { UpdateGroupPhaseDto } from '../dto/update-group-phase.dto';
@@ -138,7 +136,8 @@ export class GroupPhasesService {
     const current = this.sharedValuesOf(group);
     const shared: SharedPhaseValues = {
       name: dto.name ?? current.name,
-      startDate: dto.startDate !== undefined ? dto.startDate : current.startDate,
+      startDate:
+        dto.startDate !== undefined ? dto.startDate : current.startDate,
       endDate: dto.endDate !== undefined ? dto.endDate : current.endDate,
     };
 
@@ -265,7 +264,7 @@ export class GroupPhasesService {
     if (
       currentGroup &&
       (currentGroup.id === group.id ||
-        !CLOSED_TOURNAMENT_STATUSES.includes(currentGroup.tournament.status))
+        !TournamentStatusPolicy.isClosed(currentGroup.tournament.status))
     ) {
       throw new BusinessRuleException(
         `El equipo ya está en el grupo ${currentGroup.groupName} del torneo ` +

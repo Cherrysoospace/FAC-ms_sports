@@ -1,13 +1,7 @@
 import { OmitType, PartialType } from '@nestjs/mapped-types';
-import { Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsNotEmpty,
-  IsString,
-  MaxLength,
-  ValidateIf,
-} from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import { CreateSportDto } from './create-sport.dto';
+import { NotNullIfPresent, TrimSpaces } from '../../common/validation';
 
 /**
  * Actualización parcial de un deporte.
@@ -23,24 +17,22 @@ import { CreateSportDto } from './create-sport.dto';
  *
  * `name` se omite de PartialType porque ese helper le agrega `@IsOptional`,
  * que deja pasar `null`, y un decorador heredado no se puede quitar desde la
- * subclase; por eso se redeclara abajo con `@ValidateIf`.
+ * subclase; por eso se redeclara abajo con `@NotNullIfPresent`.
  */
 export class UpdateSportDto extends PartialType(
   OmitType(CreateSportDto, ['name'] as const),
 ) {
   // El decorador más cercano a la propiedad (IsNotEmpty) se registra primero,
   // así su mensaje es el que muestra el filtro cuando llega null o vacío.
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : value,
-  )
-  @ValidateIf((_, value) => value !== undefined)
+  @TrimSpaces()
+  @NotNullIfPresent()
   @MaxLength(100, { message: 'El nombre no puede superar los 100 caracteres' })
   @IsString({ message: 'El nombre debe ser texto' })
   @IsNotEmpty({ message: 'El nombre no puede ser vacío' })
   name?: string;
 
   // Desactivar o reactivar el deporte
-  @ValidateIf((_, value) => value !== undefined)
+  @NotNullIfPresent()
   @IsBoolean({ message: 'active debe ser true o false' })
   active?: boolean;
 }

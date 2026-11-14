@@ -1,4 +1,4 @@
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
   IsInt,
   IsNotEmpty,
@@ -7,6 +7,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { TrimSpaces } from '../../common/validation';
 
 export const MAX_LOCATION_CAPACITY = 200000;
 
@@ -17,9 +18,7 @@ export class CreateLocationDto {
   venueId!: number;
 
   // Ej. Norte, Sur, General, VIP
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : value,
-  )
+  @TrimSpaces()
   @IsNotEmpty({ message: 'El nombre es obligatorio' })
   @IsString({ message: 'El nombre debe ser texto' })
   @MaxLength(60, { message: 'El nombre no puede superar los 60 caracteres' })

@@ -1,4 +1,4 @@
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
   IsInt,
   IsNotEmpty,
@@ -7,20 +7,17 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { TrimSpaces } from '../../common/validation';
 
 export class CreateVenueDto {
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : value,
-  )
+  @TrimSpaces()
   @IsNotEmpty({ message: 'El nombre es obligatorio' })
   @IsString({ message: 'El nombre debe ser texto' })
   @MaxLength(120, { message: 'El nombre no puede superar los 120 caracteres' })
   name!: string;
 
   // Ausente o null = sin dirección
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : value,
-  )
+  @TrimSpaces()
   @IsOptional()
   @IsString({ message: 'La dirección debe ser texto' })
   @MaxLength(200, {

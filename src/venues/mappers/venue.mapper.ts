@@ -6,11 +6,7 @@ import {
   VenueParentDto,
   VenueResponseDto,
 } from '../dto/venue-response.dto';
-
-export interface VenueStats {
-  locationsCount: number;
-  totalCapacity: number;
-}
+import { VenueStats } from '../types/venue-stats';
 
 // Las propiedades `address` y `parent` de la entidad no admiten null en su
 // tipo (`?: string` / `?: Venue`), pero las columnas sí son nullable; se usan

@@ -1,4 +1,4 @@
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsInt,
@@ -7,11 +7,9 @@ import {
   Max,
   MaxLength,
   Min,
-  ValidateIf,
 } from 'class-validator';
 import { MAX_LOCATION_CAPACITY } from './create-location.dto';
-
-const isPresent = (_: unknown, value: unknown): boolean => value !== undefined;
+import { NotNullIfPresent, TrimSpaces } from '../../common/validation';
 
 /**
  * Actualización parcial de una localidad. El escenario no se puede cambiar.
@@ -22,17 +20,15 @@ const isPresent = (_: unknown, value: unknown): boolean => value !== undefined;
 export class UpdateLocationDto {
   // El decorador más cercano a la propiedad se registra primero, así su
   // mensaje es el que muestra el filtro cuando llega null.
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : value,
-  )
-  @ValidateIf(isPresent)
+  @TrimSpaces()
+  @NotNullIfPresent()
   @MaxLength(60, { message: 'El nombre no puede superar los 60 caracteres' })
   @IsString({ message: 'El nombre debe ser texto' })
   @IsNotEmpty({ message: 'El nombre no puede ser vacío' })
   name?: string;
 
   @Type(() => Number)
-  @ValidateIf(isPresent)
+  @NotNullIfPresent()
   @Max(MAX_LOCATION_CAPACITY, {
     message: `La capacidad no puede superar ${MAX_LOCATION_CAPACITY}`,
   })
@@ -41,7 +37,7 @@ export class UpdateLocationDto {
   capacity?: number;
 
   // Desactivar o reactivar la localidad
-  @ValidateIf(isPresent)
+  @NotNullIfPresent()
   @IsBoolean({ message: 'active debe ser true o false' })
   active?: boolean;
 }

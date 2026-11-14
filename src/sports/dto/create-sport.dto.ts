@@ -7,11 +7,10 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
+import { TrimSpaces } from '../../common/validation';
 
 export class CreateSportDto {
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : value,
-  )
+  @TrimSpaces()
   @IsNotEmpty({ message: 'El nombre es obligatorio' })
   @IsString({ message: 'El nombre debe ser texto' })
   @MaxLength(100, { message: 'El nombre no puede superar los 100 caracteres' })

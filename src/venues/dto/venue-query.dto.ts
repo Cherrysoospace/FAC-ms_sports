@@ -7,9 +7,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-
-const toBoolean = ({ value }: { value: unknown }): unknown =>
-  value === undefined ? undefined : value === 'true' || value === true;
+import { ToBoolean } from '../../common/validation';
 
 // Filtros de GET /venues
 export class VenueQueryDto {
@@ -19,7 +17,9 @@ export class VenueQueryDto {
   )
   @IsOptional()
   @IsString({ message: 'La búsqueda debe ser texto' })
-  @MaxLength(120, { message: 'La búsqueda no puede superar los 120 caracteres' })
+  @MaxLength(120, {
+    message: 'La búsqueda no puede superar los 120 caracteres',
+  })
   search?: string;
 
   // Espacios internos de ese escenario
@@ -30,12 +30,12 @@ export class VenueQueryDto {
   parentId?: number;
 
   // true = solo escenarios principales (sin padre)
-  @Transform(toBoolean)
+  @ToBoolean()
   @IsOptional()
   @IsBoolean({ message: 'El filtro de raíces debe ser verdadero o falso' })
   roots?: boolean;
 
-  @Transform(toBoolean)
+  @ToBoolean()
   @IsOptional()
   @IsBoolean({ message: 'El filtro de activos debe ser verdadero o falso' })
   active?: boolean;

@@ -7,11 +7,7 @@ import {
   TournamentResponseDto,
   TournamentSportDto,
 } from '../dto/tournament-response.dto';
-
-export interface TournamentCounts {
-  registrationsCount: number;
-  phasesCount: number;
-}
+import { TournamentCounts } from '../types/tournament-counts';
 
 export class TournamentMapper {
   static toEntity(dto: CreateTournamentDto, sport: Sport): Tournament {

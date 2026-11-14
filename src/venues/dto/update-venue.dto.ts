@@ -1,13 +1,7 @@
 import { OmitType, PartialType } from '@nestjs/mapped-types';
-import { Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsNotEmpty,
-  IsString,
-  MaxLength,
-  ValidateIf,
-} from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import { CreateVenueDto } from './create-venue.dto';
+import { NotNullIfPresent, TrimSpaces } from '../../common/validation';
 
 /**
  * Actualización parcial de un escenario.
@@ -16,24 +10,22 @@ import { CreateVenueDto } from './create-venue.dto';
  * número = nuevo padre (el servicio valida existencia y ciclos).
  * `address` también acepta `null` (borra la dirección).
  * `name` y `active` NO aceptan `null` (columnas NOT NULL): se omiten de
- * PartialType (agrega `@IsOptional`) y se redeclaran con `@ValidateIf`.
+ * PartialType (agrega `@IsOptional`) y se redeclaran con `@NotNullIfPresent`.
  */
 export class UpdateVenueDto extends PartialType(
   OmitType(CreateVenueDto, ['name'] as const),
 ) {
   // El decorador más cercano a la propiedad (IsNotEmpty) se registra primero,
   // así su mensaje es el que muestra el filtro cuando llega null o vacío.
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : value,
-  )
-  @ValidateIf((_, value) => value !== undefined)
+  @TrimSpaces()
+  @NotNullIfPresent()
   @MaxLength(120, { message: 'El nombre no puede superar los 120 caracteres' })
   @IsString({ message: 'El nombre debe ser texto' })
   @IsNotEmpty({ message: 'El nombre no puede ser vacío' })
   name?: string;
 
   // Desactivar o reactivar el escenario
-  @ValidateIf((_, value) => value !== undefined)
+  @NotNullIfPresent()
   @IsBoolean({ message: 'active debe ser true o false' })
   active?: boolean;
 }

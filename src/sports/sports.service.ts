@@ -8,6 +8,7 @@ import { CreateSportDto } from './dto/create-sport.dto';
 import { UpdateSportDto } from './dto/update-sport.dto';
 import { SportQueryDto } from './dto/sport-query.dto';
 import { SportResponseDto } from './dto/sport-response.dto';
+import { joinList, plural } from '../common/text/spanish-list';
 import {
   ApplicationException,
   BusinessRuleException,
@@ -75,7 +76,8 @@ export class SportsService {
       });
     } else if (typeof dto.parentId === 'number') {
       const newParentId = dto.parentId;
-      const ancestors = await this.sportsRepository.findAncestorIds(newParentId);
+      const ancestors =
+        await this.sportsRepository.findAncestorIds(newParentId);
       if (newParentId === id || ancestors.includes(id)) {
         throw new ApplicationException(
           ErrorCase.INVALID_OPERATION,
@@ -101,14 +103,14 @@ export class SportsService {
     ]);
 
     const dependencies = [
-      this.plural(subSports, 'subdeporte', 'subdeportes'),
-      this.plural(tournaments, 'torneo', 'torneos'),
-      this.plural(teams, 'equipo', 'equipos'),
+      plural(subSports, 'subdeporte', 'subdeportes'),
+      plural(tournaments, 'torneo', 'torneos'),
+      plural(teams, 'equipo', 'equipos'),
     ].filter((d): d is string => d !== null);
 
     if (dependencies.length > 0) {
       throw new BusinessRuleException(
-        `No se puede eliminar porque tiene ${this.joinList(dependencies)} ` +
+        `No se puede eliminar porque tiene ${joinList(dependencies)} ` +
           'asociados. Desactívelo con PATCH { "active": false }',
       );
     }
@@ -154,15 +156,5 @@ export class SportsService {
         `Ya existe un deporte con el nombre "${name}"`,
       );
     }
-  }
-
-  private plural(count: number, singular: string, pluralForm: string) {
-    if (count === 0) return null;
-    return `${count} ${count === 1 ? singular : pluralForm}`;
-  }
-
-  private joinList(items: string[]): string {
-    if (items.length === 1) return items[0];
-    return `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`;
   }
 }

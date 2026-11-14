@@ -1,4 +1,4 @@
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
@@ -6,62 +6,56 @@ import {
   IsInt,
   IsNotEmpty,
   IsString,
-  Matches,
   MaxLength,
   Min,
-  ValidateIf,
 } from 'class-validator';
 import { TournamentStatus } from '../enums/tournament-status.enum';
-import { DATE_ONLY_REGEX } from './create-tournament.dto';
-
-const isPresent = (_: unknown, value: unknown): boolean => value !== undefined;
+import {
+  IsDateOnly,
+  NotNullIfPresent,
+  TrimSpaces,
+} from '../../common/validation';
 
 /**
  * Actualización parcial de un torneo.
  *
  * Todas las columnas son NOT NULL, así que ningún campo acepta `null`: si
  * viene, se valida; solo `undefined` significa "no cambia". Por eso no se usa
- * PartialType (agrega `@IsOptional`, que deja pasar `null`) sino `@ValidateIf`.
+ * PartialType (agrega `@IsOptional`, que deja pasar `null`) sino `@NotNullIfPresent`.
  */
 export class UpdateTournamentDto {
   // El decorador más cercano a la propiedad se registra primero, así su
   // mensaje es el que muestra el filtro cuando llega null.
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : value,
-  )
-  @ValidateIf(isPresent)
+  @TrimSpaces()
+  @NotNullIfPresent()
   @MaxLength(150, { message: 'El nombre no puede superar los 150 caracteres' })
   @IsString({ message: 'El nombre debe ser texto' })
   @IsNotEmpty({ message: 'El nombre no puede ser vacío' })
   name?: string;
 
   @Type(() => Number)
-  @ValidateIf(isPresent)
+  @NotNullIfPresent()
   @Min(1, { message: 'El identificador del deporte no es válido' })
   @IsInt({ message: 'El deporte debe ser un número entero' })
   sportId?: number;
 
-  @ValidateIf(isPresent)
+  @NotNullIfPresent()
   @IsDateString(
     { strict: true },
     { message: 'La fecha de inicio no es una fecha válida' },
   )
-  @Matches(DATE_ONLY_REGEX, {
-    message: 'La fecha de inicio debe tener el formato YYYY-MM-DD',
-  })
+  @IsDateOnly('La fecha de inicio debe tener el formato YYYY-MM-DD')
   startDate?: string;
 
-  @ValidateIf(isPresent)
+  @NotNullIfPresent()
   @IsDateString(
     { strict: true },
     { message: 'La fecha de fin no es una fecha válida' },
   )
-  @Matches(DATE_ONLY_REGEX, {
-    message: 'La fecha de fin debe tener el formato YYYY-MM-DD',
-  })
+  @IsDateOnly('La fecha de fin debe tener el formato YYYY-MM-DD')
   endDate?: string;
 
-  @ValidateIf(isPresent)
+  @NotNullIfPresent()
   @IsDateString(
     { strict: true },
     {
@@ -71,7 +65,7 @@ export class UpdateTournamentDto {
   )
   registrationOpensAt?: string;
 
-  @ValidateIf(isPresent)
+  @NotNullIfPresent()
   @IsDateString(
     { strict: true },
     {
@@ -80,14 +74,14 @@ export class UpdateTournamentDto {
   )
   registrationClosesAt?: string;
 
-  @ValidateIf(isPresent)
+  @NotNullIfPresent()
   @IsEnum(TournamentStatus, {
     message: `El estado debe ser uno de: ${Object.values(TournamentStatus).join(', ')}`,
   })
   status?: TournamentStatus;
 
   // Desactivar o reactivar el torneo
-  @ValidateIf(isPresent)
+  @NotNullIfPresent()
   @IsBoolean({ message: 'active debe ser true o false' })
   active?: boolean;
 }

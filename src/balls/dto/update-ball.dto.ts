@@ -1,13 +1,8 @@
 import { OmitType, PartialType } from '@nestjs/mapped-types';
 import { Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsNotEmpty,
-  IsString,
-  MaxLength,
-  ValidateIf,
-} from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 import { CreateBallDto } from './create-ball.dto';
+import { NotNullIfPresent } from '../../common/validation';
 
 const trim = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? value.trim() : value;
@@ -20,7 +15,7 @@ const trim = ({ value }: { value: unknown }): unknown =>
  * vienen, se validan; solo `undefined` significa "no cambia".
  *
  * `brand` y `model` se omiten de PartialType porque ese helper les agrega
- * `@IsOptional`, que deja pasar `null`; por eso se redeclaran con `@ValidateIf`.
+ * `@IsOptional`, que deja pasar `null`; por eso se redeclaran con `@NotNullIfPresent`.
  */
 export class UpdateBallDto extends PartialType(
   OmitType(CreateBallDto, ['brand', 'model'] as const),
@@ -28,21 +23,21 @@ export class UpdateBallDto extends PartialType(
   // El decorador más cercano a la propiedad (IsNotEmpty) se registra primero,
   // así su mensaje es el que muestra el filtro cuando llega null o vacío.
   @Transform(trim)
-  @ValidateIf((_, value) => value !== undefined)
+  @NotNullIfPresent()
   @MaxLength(80, { message: 'La marca no puede superar los 80 caracteres' })
   @IsString({ message: 'La marca debe ser texto' })
   @IsNotEmpty({ message: 'La marca no puede ser vacía' })
   brand?: string;
 
   @Transform(trim)
-  @ValidateIf((_, value) => value !== undefined)
+  @NotNullIfPresent()
   @MaxLength(80, { message: 'El modelo no puede superar los 80 caracteres' })
   @IsString({ message: 'El modelo debe ser texto' })
   @IsNotEmpty({ message: 'El modelo no puede ser vacío' })
   model?: string;
 
   // Desactivar o reactivar la pelota
-  @ValidateIf((_, value) => value !== undefined)
+  @NotNullIfPresent()
   @IsBoolean({ message: 'active debe ser true o false' })
   active?: boolean;
 }

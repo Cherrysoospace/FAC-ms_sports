@@ -7,7 +7,8 @@ import { Match } from '../../matches/entities/match.entity';
 import { MatchStatus } from '../../matches/enums/match-status.enum';
 import { TournamentVenue } from '../../tournament-venues/entities/tournament-venue.entity';
 import { VenueQueryDto } from '../dto/venue-query.dto';
-import { VenueStats } from '../mappers/venue.mapper';
+import { VenueStats } from '../types/venue-stats';
+import { escapeLike } from '../../common/database/query.util';
 
 interface StatsRow {
   id: number | string;
@@ -39,10 +40,8 @@ export class VenuesRepository {
       .orderBy('venue.name', 'ASC');
 
     if (query.search) {
-      // Se escapan los comodines de LIKE para buscar el texto literal.
-      const escaped = query.search.replace(/[\\%_]/g, (c) => `\\${c}`);
       qb.andWhere('LOWER(venue.name) LIKE LOWER(:search)', {
-        search: `%${escaped}%`,
+        search: `%${escapeLike(query.search)}%`,
       });
     }
     if (query.parentId !== undefined) {

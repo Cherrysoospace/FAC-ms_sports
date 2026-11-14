@@ -1,20 +1,16 @@
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import {
   IsDateString,
   IsInt,
   IsNotEmpty,
   IsString,
-  Matches,
   MaxLength,
   Min,
 } from 'class-validator';
-
-export const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+import { IsDateOnly, TrimSpaces } from '../../common/validation';
 
 export class CreateTournamentDto {
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : value,
-  )
+  @TrimSpaces()
   @IsNotEmpty({ message: 'El nombre es obligatorio' })
   @IsString({ message: 'El nombre debe ser texto' })
   @MaxLength(150, { message: 'El nombre no puede superar los 150 caracteres' })
@@ -26,18 +22,14 @@ export class CreateTournamentDto {
   sportId!: number;
 
   // Fechas sin hora (YYYY-MM-DD)
-  @Matches(DATE_ONLY_REGEX, {
-    message: 'La fecha de inicio debe tener el formato YYYY-MM-DD',
-  })
+  @IsDateOnly('La fecha de inicio debe tener el formato YYYY-MM-DD')
   @IsDateString(
     { strict: true },
     { message: 'La fecha de inicio no es una fecha válida' },
   )
   startDate!: string;
 
-  @Matches(DATE_ONLY_REGEX, {
-    message: 'La fecha de fin debe tener el formato YYYY-MM-DD',
-  })
+  @IsDateOnly('La fecha de fin debe tener el formato YYYY-MM-DD')
   @IsDateString(
     { strict: true },
     { message: 'La fecha de fin no es una fecha válida' },

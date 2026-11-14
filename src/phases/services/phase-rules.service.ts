@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Tournament } from '../../tournaments/entities/tournament.entity';
-import { TournamentStatus } from '../../tournaments/enums/tournament-status.enum';
+import { TournamentStatusPolicy } from '../../tournaments/policies/tournament-status.policy';
 import { PhasesRepository } from '../repositories/phases.repository';
 import {
   ApplicationException,
@@ -10,19 +10,14 @@ import {
 
 export type PhaseKind = 'GROUP' | 'FINAL';
 
-// Torneos cuyas fases ya no se pueden modificar.
-export const CLOSED_TOURNAMENT_STATUSES: TournamentStatus[] = [
-  TournamentStatus.FINISHED,
-  TournamentStatus.CANCELLED,
-];
-
 // Reglas comunes a grupos y fases finales.
 @Injectable()
 export class PhaseRulesService {
   constructor(private readonly phasesRepository: PhasesRepository) {}
 
+  // Las fases de un torneo cerrado (FINISHED o CANCELLED) ya no se modifican.
   assertTournamentEditable(tournament: Tournament): void {
-    if (CLOSED_TOURNAMENT_STATUSES.includes(tournament.status)) {
+    if (TournamentStatusPolicy.isClosed(tournament.status)) {
       throw new ApplicationException(
         ErrorCase.INVALID_OPERATION,
         'No se pueden modificar las fases de un torneo finalizado o cancelado',
@@ -49,10 +44,7 @@ export class PhaseRulesService {
       ['fin', endDate],
     ];
     for (const [label, date] of checks) {
-      if (
-        date &&
-        (date < tournament.startDate || date > tournament.endDate)
-      ) {
+      if (date && (date < tournament.startDate || date > tournament.endDate)) {
         throw new ApplicationException(
           ErrorCase.INVALID_OPERATION,
           `La fecha de ${label} de la fase (${date}) debe estar dentro de ` +

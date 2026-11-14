@@ -9,9 +9,7 @@ import {
   Min,
 } from 'class-validator';
 import { TournamentStatus } from '../enums/tournament-status.enum';
-
-const toBoolean = ({ value }: { value: unknown }): unknown =>
-  value === undefined ? undefined : value === 'true' || value === true;
+import { ToBoolean } from '../../common/validation';
 
 // Filtros de GET /tournaments
 export class TournamentQueryDto {
@@ -27,7 +25,7 @@ export class TournamentQueryDto {
   })
   status?: TournamentStatus;
 
-  @Transform(toBoolean)
+  @ToBoolean()
   @IsOptional()
   @IsBoolean({ message: 'El filtro de activos debe ser verdadero o falso' })
   active?: boolean;
@@ -38,6 +36,8 @@ export class TournamentQueryDto {
   )
   @IsOptional()
   @IsString({ message: 'La búsqueda debe ser texto' })
-  @MaxLength(150, { message: 'La búsqueda no puede superar los 150 caracteres' })
+  @MaxLength(150, {
+    message: 'La búsqueda no puede superar los 150 caracteres',
+  })
   search?: string;
 }

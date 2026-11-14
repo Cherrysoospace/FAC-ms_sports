@@ -5,9 +5,8 @@ import { Registration } from './entities/registration.entity';
 import { RegistrationStatus } from './enums/registration-status.enum';
 import { Team } from '../teams/entities/team.entity';
 import { TeamSport } from '../team-sports/entities/team-sport.entity';
-import { Tournament } from '../tournaments/entities/tournament.entity';
-import { TournamentStatus } from '../tournaments/enums/tournament-status.enum';
 import { TournamentsService } from '../tournaments/tournaments.service';
+import { TournamentStatusPolicy } from '../tournaments/policies/tournament-status.policy';
 import { RegistrationsRepository } from './repositories/registrations.repository';
 import { RegistrationMapper } from './mappers/registration.mapper';
 import { CreateRegistrationDto } from './dto/create-registration.dto';
@@ -63,7 +62,7 @@ export class RegistrationsService {
     const tournament = await this.tournamentsService.getTournamentOrFail(
       dto.tournamentId,
     );
-    this.assertRegistrationOpen(tournament);
+    TournamentStatusPolicy.assertRegistrationOpen(tournament, new Date());
 
     // Todo o nada: se valida y se guarda dentro de la misma transacción.
     await this.registrationRepository.manager.transaction(async (manager) => {
@@ -94,16 +93,25 @@ export class RegistrationsService {
         const team = teamsById.get(teamId);
         const previous = registrationByTeam.get(teamId);
         if (!team) {
-          errors.push({ label: `Equipo #${teamId} (no existe)`, duplicate: false });
+          errors.push({
+            label: `Equipo #${teamId} (no existe)`,
+            duplicate: false,
+          });
         } else if (!team.active) {
-          errors.push({ label: `${team.name} (está inactivo)`, duplicate: false });
+          errors.push({
+            label: `${team.name} (está inactivo)`,
+            duplicate: false,
+          });
         } else if (!playsSport.has(teamId)) {
           errors.push({
             label: `${team.name} (no juega ${tournament.sport.name})`,
             duplicate: false,
           });
         } else if (previous?.status === RegistrationStatus.ACTIVE) {
-          errors.push({ label: `${team.name} (ya está inscrito)`, duplicate: true });
+          errors.push({
+            label: `${team.name} (ya está inscrito)`,
+            duplicate: true,
+          });
         }
       }
 
@@ -130,7 +138,9 @@ export class RegistrationsService {
         } else {
           const team = teamsById.get(teamId);
           if (team) {
-            newRegistrations.push(RegistrationMapper.toEntity(tournament, team));
+            newRegistrations.push(
+              RegistrationMapper.toEntity(tournament, team),
+            );
           }
         }
       }
@@ -167,7 +177,7 @@ export class RegistrationsService {
     const tournament = await this.tournamentsService.getTournamentOrFail(
       registration.tournament.id,
     );
-    this.assertRegistrationOpen(tournament);
+    TournamentStatusPolicy.assertRegistrationOpen(tournament, new Date());
 
     const group = await this.registrationsRepository.findTeamGroupInTournament(
       registration.team.id,
@@ -200,30 +210,5 @@ export class RegistrationsService {
     });
     if (!registration) throw ResourceNotFoundException.of('Inscripción', id);
     return registration;
-  }
-
-  // Periodo abierto: estado REGISTRATION_OPEN y hora actual dentro del rango.
-  private assertRegistrationOpen(tournament: Tournament): void {
-    const now = Date.now();
-    const notYetOpen =
-      tournament.status === TournamentStatus.PLANNED ||
-      (tournament.status === TournamentStatus.REGISTRATION_OPEN &&
-        now < tournament.registrationOpensAt.getTime());
-
-    if (notYetOpen) {
-      throw new ApplicationException(
-        ErrorCase.INVALID_OPERATION,
-        `Las inscripciones del torneo ${tournament.name} aún no abren`,
-      );
-    }
-    if (
-      tournament.status !== TournamentStatus.REGISTRATION_OPEN ||
-      now > tournament.registrationClosesAt.getTime()
-    ) {
-      throw new ApplicationException(
-        ErrorCase.INVALID_OPERATION,
-        `Las inscripciones del torneo ${tournament.name} están cerradas`,
-      );
-    }
   }
 }

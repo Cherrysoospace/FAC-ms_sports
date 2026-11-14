@@ -8,14 +8,7 @@ import { Match } from '../../matches/entities/match.entity';
 import { Team } from '../../teams/entities/team.entity';
 import { GroupPhaseQueryDto } from '../dto/group-phase-query.dto';
 import { FinalPhaseQueryDto } from '../dto/final-phase-query.dto';
-
-interface CountRow {
-  id: number | string;
-  total: number | string;
-}
-
-const toCountMap = (rows: CountRow[]): Map<number, number> =>
-  new Map(rows.map((row) => [Number(row.id), Number(row.total)]));
+import { CountRow, toCountMap } from '../../common/database/query.util';
 
 // Consultas propias de grupos y fases finales (herencia en tabla `phases`).
 @Injectable()

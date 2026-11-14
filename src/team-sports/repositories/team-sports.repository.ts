@@ -4,13 +4,8 @@ import { Repository } from 'typeorm';
 import { TeamSport } from '../entities/team-sport.entity';
 import { Registration } from '../../registrations/entities/registration.entity';
 import { RegistrationStatus } from '../../registrations/enums/registration-status.enum';
-import { TournamentStatus } from '../../tournaments/enums/tournament-status.enum';
+import { TournamentStatusPolicy } from '../../tournaments/policies/tournament-status.policy';
 import { TeamSportQueryDto } from '../dto/team-sport-query.dto';
-
-const CLOSED_TOURNAMENT_STATUSES = [
-  TournamentStatus.FINISHED,
-  TournamentStatus.CANCELLED,
-];
 
 // Consultas propias del módulo de equipo-deporte.
 @Injectable()
@@ -60,7 +55,7 @@ export class TeamSportsRepository {
       })
       .andWhere('tournament.sport_id = :sportId', { sportId })
       .andWhere('tournament.status NOT IN (:...closed)', {
-        closed: CLOSED_TOURNAMENT_STATUSES,
+        closed: [...TournamentStatusPolicy.CLOSED],
       })
       .orderBy('tournament.startDate', 'ASC')
       .getOne();

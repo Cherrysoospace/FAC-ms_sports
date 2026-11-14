@@ -5,11 +5,10 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  Matches,
   MaxLength,
   Min,
 } from 'class-validator';
-import { DATE_ONLY_REGEX } from '../../tournaments/dto/create-tournament.dto';
+import { IsDateOnly, TrimSpaces } from '../../common/validation';
 
 export class CreateGroupPhaseDto {
   @Type(() => Number)
@@ -18,9 +17,7 @@ export class CreateGroupPhaseDto {
   tournamentId!: number;
 
   // Nombre de la fase, compartido por todos sus grupos (ej. 'Fase de grupos')
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim().replace(/\s+/g, ' ') : value,
-  )
+  @TrimSpaces()
   @IsNotEmpty({ message: 'El nombre es obligatorio' })
   @IsString({ message: 'El nombre debe ser texto' })
   @MaxLength(100, { message: 'El nombre no puede superar los 100 caracteres' })
@@ -49,9 +46,7 @@ export class CreateGroupPhaseDto {
   qualifiersCount?: number | null;
 
   @IsOptional()
-  @Matches(DATE_ONLY_REGEX, {
-    message: 'La fecha de inicio debe tener el formato YYYY-MM-DD',
-  })
+  @IsDateOnly('La fecha de inicio debe tener el formato YYYY-MM-DD')
   @IsDateString(
     { strict: true },
     { message: 'La fecha de inicio no es una fecha válida' },
@@ -59,9 +54,7 @@ export class CreateGroupPhaseDto {
   startDate?: string | null;
 
   @IsOptional()
-  @Matches(DATE_ONLY_REGEX, {
-    message: 'La fecha de fin debe tener el formato YYYY-MM-DD',
-  })
+  @IsDateOnly('La fecha de fin debe tener el formato YYYY-MM-DD')
   @IsDateString(
     { strict: true },
     { message: 'La fecha de fin no es una fecha válida' },

@@ -8,6 +8,7 @@ import { CreateVenueDto } from './dto/create-venue.dto';
 import { UpdateVenueDto } from './dto/update-venue.dto';
 import { VenueQueryDto } from './dto/venue-query.dto';
 import { VenueResponseDto } from './dto/venue-response.dto';
+import { joinList, plural } from '../common/text/spanish-list';
 import {
   ApplicationException,
   BusinessRuleException,
@@ -112,7 +113,8 @@ export class VenuesService {
 
     // a) Nombre único entre hermanos (con el nombre y el padre finales).
     const nameChanges = dto.name !== undefined && dto.name !== venue.name;
-    const parentChanges = (finalParent?.id ?? null) !== (currentParent?.id ?? null);
+    const parentChanges =
+      (finalParent?.id ?? null) !== (currentParent?.id ?? null);
     if (nameChanges || parentChanges) {
       await this.assertNameAvailable(dto.name ?? venue.name, finalParent, id);
     }
@@ -152,15 +154,15 @@ export class VenuesService {
     ]);
 
     const dependencies = [
-      this.plural(children, 'espacio interno', 'espacios internos'),
-      this.plural(locations, 'localidad', 'localidades'),
-      this.plural(matches, 'partido', 'partidos'),
-      this.plural(tournaments, 'torneo', 'torneos'),
+      plural(children, 'espacio interno', 'espacios internos'),
+      plural(locations, 'localidad', 'localidades'),
+      plural(matches, 'partido', 'partidos'),
+      plural(tournaments, 'torneo', 'torneos'),
     ].filter((d): d is string => d !== null);
 
     if (dependencies.length > 0) {
       throw new BusinessRuleException(
-        `No se puede eliminar porque tiene ${this.joinList(dependencies)} ` +
+        `No se puede eliminar porque tiene ${joinList(dependencies)} ` +
           'asociados. Desactívelo con PATCH { "active": false }',
       );
     }
@@ -201,15 +203,5 @@ export class VenuesService {
           : `Ya existe el escenario ${name} como escenario principal`,
       );
     }
-  }
-
-  private plural(count: number, singular: string, pluralForm: string) {
-    if (count === 0) return null;
-    return `${count} ${count === 1 ? singular : pluralForm}`;
-  }
-
-  private joinList(items: string[]): string {
-    if (items.length === 1) return items[0];
-    return `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`;
   }
 }
