@@ -2,20 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
 import { GroupPhase } from '../entities/group-phase.entity';
-import { Team } from '../../teams/entities/team.entity';
-import { Registration } from '../../registrations/entities/registration.entity';
-import { RegistrationStatus } from '../../registrations/enums/registration-status.enum';
 import { TournamentsService } from '../../tournaments/tournaments.service';
-import { TournamentStatusPolicy } from '../../tournaments/policies/tournament-status.policy';
 import { PhasesRepository } from '../repositories/phases.repository';
 import { PhaseRulesService } from './phase-rules.service';
+import {
+  GroupPhaseConsistencyPolicy,
+  SharedPhaseValues,
+} from '../policies/group-phase-consistency.policy';
 import { GroupPhaseMapper } from '../mappers/group-phase.mapper';
 import { CreateGroupPhaseDto } from '../dto/create-group-phase.dto';
 import { UpdateGroupPhaseDto } from '../dto/update-group-phase.dto';
 import { GroupPhaseQueryDto } from '../dto/group-phase-query.dto';
 import { GroupPhaseResponseDto } from '../dto/group-phase-response.dto';
-import { GroupTeamResponseDto } from '../dto/group-team-response.dto';
-import { AssignGroupTeamDto } from '../dto/assign-group-team.dto';
 import {
   ApplicationException,
   BusinessRuleException,
@@ -23,22 +21,16 @@ import {
   ResourceNotFoundException,
 } from '../../common/exceptions';
 
-// Datos que comparten todos los grupos de una misma fase (torneo + order).
-interface SharedPhaseValues {
-  name: string;
-  startDate: string | null;
-  endDate: string | null;
-}
-
+/**
+ * CRUD de grupos. La coherencia de la fase (grupos hermanos con el mismo
+ * nombre y fechas) la decide GroupPhaseConsistencyPolicy, y los equipos del
+ * grupo los gestiona GroupTeamsService.
+ */
 @Injectable()
 export class GroupPhasesService {
   constructor(
     @InjectRepository(GroupPhase)
     private readonly groupPhaseRepository: Repository<GroupPhase>,
-    @InjectRepository(Team)
-    private readonly teamRepository: Repository<Team>,
-    @InjectRepository(Registration)
-    private readonly registrationRepository: Repository<Registration>,
     private readonly phasesRepository: PhasesRepository,
     private readonly phaseRules: PhaseRulesService,
     private readonly tournamentsService: TournamentsService,
@@ -69,6 +61,7 @@ export class GroupPhasesService {
     return GroupPhaseMapper.toResponseDto(group, { teamsCount, matchesCount });
   }
 
+  // Lo usa GroupTeamsService. Carga el torneo del grupo.
   async getGroupOrFail(id: number): Promise<GroupPhase> {
     const group = await this.groupPhaseRepository.findOne({
       where: { id },
@@ -100,7 +93,11 @@ export class GroupPhasesService {
       tournament.id,
       dto.order,
     );
-    this.assertMatchesSiblings(siblings, shared, dto.order);
+    GroupPhaseConsistencyPolicy.assertMatchesSiblings(
+      siblings,
+      shared,
+      dto.order,
+    );
     this.phaseRules.assertDatesInsideTournament(
       shared.startDate,
       shared.endDate,
@@ -133,29 +130,12 @@ export class GroupPhasesService {
       );
     }
 
-    const current = this.sharedValuesOf(group);
-    const shared: SharedPhaseValues = {
-      name: dto.name ?? current.name,
-      startDate:
-        dto.startDate !== undefined ? dto.startDate : current.startDate,
-      endDate: dto.endDate !== undefined ? dto.endDate : current.endDate,
-    };
+    const current = GroupPhaseConsistencyPolicy.sharedValuesOf(group);
+    const shared = GroupPhaseConsistencyPolicy.mergeUpdate(current, dto);
 
     // Si cambia de fase, debe encajar con los grupos del nuevo order.
     if (orderChanges) {
-      await this.phaseRules.assertOrderType(
-        tournament.id,
-        finalOrder,
-        'GROUP',
-        id,
-      );
-      await this.assertOrderBeforeFinals(tournament.id, finalOrder);
-      const newSiblings = await this.phasesRepository.findGroupsInOrder(
-        tournament.id,
-        finalOrder,
-        id,
-      );
-      this.assertMatchesSiblings(newSiblings, shared, finalOrder);
+      await this.assertFitsNewOrder(tournament.id, finalOrder, id, shared);
     }
     this.phaseRules.assertDatesInsideTournament(
       shared.startDate,
@@ -164,17 +144,17 @@ export class GroupPhasesService {
     );
 
     // Sin cambio de order, nombre y fechas se aplican a toda la fase.
-    const sharedChanges =
-      !orderChanges &&
-      (shared.name !== current.name ||
-        shared.startDate !== current.startDate ||
-        shared.endDate !== current.endDate);
+    const propagate = GroupPhaseConsistencyPolicy.valuesToPropagate(
+      current,
+      shared,
+      orderChanges,
+    );
 
     GroupPhaseMapper.mergeEntity(group, dto);
 
     await this.groupPhaseRepository.manager.transaction(async (manager) => {
       await manager.save(group);
-      if (!sharedChanges) return;
+      if (!propagate) return;
 
       const siblings = await manager.find(GroupPhase, {
         where: {
@@ -183,11 +163,7 @@ export class GroupPhasesService {
           id: Not(id),
         },
       });
-      for (const sibling of siblings) {
-        sibling.name = shared.name;
-        sibling.startDate = shared.startDate as string;
-        sibling.endDate = shared.endDate as string;
-      }
+      GroupPhaseConsistencyPolicy.applyTo(siblings, propagate);
       if (siblings.length > 0) await manager.save(siblings);
     });
 
@@ -212,102 +188,33 @@ export class GroupPhasesService {
     return { message: `Grupo #${id} eliminado correctamente` };
   }
 
-  // ---- Equipos del grupo ----
-
-  async findTeams(id: number): Promise<GroupTeamResponseDto[]> {
-    await this.getGroupOrFail(id);
-    const teams = await this.teamRepository.find({
-      where: { group: { id } },
-      order: { name: 'ASC' },
-    });
-    return GroupPhaseMapper.toTeamResponseDtoList(teams);
-  }
-
-  async assignTeam(
-    id: number,
-    dto: AssignGroupTeamDto,
-  ): Promise<GroupTeamResponseDto[]> {
-    const group = await this.getGroupOrFail(id);
-    const tournament = group.tournament;
-
-    const team = await this.teamRepository.findOne({
-      where: { id: dto.teamId },
-      relations: { group: { tournament: true } },
-    });
-    if (!team) throw ResourceNotFoundException.of('Equipo', dto.teamId);
-    if (!team.active) {
-      throw new ApplicationException(
-        ErrorCase.INVALID_OPERATION,
-        'El equipo está inactivo',
-      );
-    }
-
-    const registered = await this.registrationRepository.exists({
-      where: {
-        tournament: { id: tournament.id },
-        team: { id: team.id },
-        status: RegistrationStatus.ACTIVE,
-      },
-    });
-    if (!registered) {
-      throw new ApplicationException(
-        ErrorCase.INVALID_OPERATION,
-        'El equipo no está inscrito en el torneo',
-      );
-    }
-
-    this.phaseRules.assertTournamentEditable(tournament);
-
-    // Un equipo está en un solo grupo a la vez; se libera si el torneo de su
-    // grupo actual ya terminó o se canceló.
-    const currentGroup = team.group;
-    if (
-      currentGroup &&
-      (currentGroup.id === group.id ||
-        !TournamentStatusPolicy.isClosed(currentGroup.tournament.status))
-    ) {
-      throw new BusinessRuleException(
-        `El equipo ya está en el grupo ${currentGroup.groupName} del torneo ` +
-          `${currentGroup.tournament.name}`,
-      );
-    }
-
-    await this.teamRepository.update(team.id, { group: { id: group.id } });
-    return this.findTeams(id);
-  }
-
-  async removeTeam(id: number, teamId: number): Promise<{ message: string }> {
-    const group = await this.getGroupOrFail(id);
-    this.phaseRules.assertTournamentEditable(group.tournament);
-
-    const team = await this.teamRepository.findOne({
-      where: { id: teamId, group: { id } },
-    });
-    if (!team) {
-      throw new ResourceNotFoundException(
-        `El equipo #${teamId} no está en el grupo ${group.groupName}`,
-      );
-    }
-
-    const matches = await this.phasesRepository.countTeamMatchesInPhase(
-      teamId,
-      id,
-    );
-    if (matches > 0) {
-      throw new BusinessRuleException(
-        `No se puede retirar el equipo porque ya tiene ${matches} ` +
-          `${matches === 1 ? 'partido' : 'partidos'} en el grupo ` +
-          group.groupName,
-      );
-    }
-
-    await this.teamRepository.update(teamId, { group: null });
-    return {
-      message: `Equipo #${teamId} retirado del grupo ${group.groupName}`,
-    };
-  }
-
   // ---- Reglas propias de los grupos ----
+
+  // Mismas validaciones que al crear, contra los grupos del nuevo order.
+  private async assertFitsNewOrder(
+    tournamentId: number,
+    order: number,
+    groupId: number,
+    shared: SharedPhaseValues,
+  ): Promise<void> {
+    await this.phaseRules.assertOrderType(
+      tournamentId,
+      order,
+      'GROUP',
+      groupId,
+    );
+    await this.assertOrderBeforeFinals(tournamentId, order);
+    const newSiblings = await this.phasesRepository.findGroupsInOrder(
+      tournamentId,
+      order,
+      groupId,
+    );
+    GroupPhaseConsistencyPolicy.assertMatchesSiblings(
+      newSiblings,
+      shared,
+      order,
+    );
+  }
 
   private async assertGroupNameAvailable(
     tournamentId: number,
@@ -344,37 +251,5 @@ export class GroupPhasesService {
         `menor que ${firstFinal.order}, el orden de ${firstFinal.round} ` +
         `(orden ${firstFinal.order})`,
     );
-  }
-
-  // Los grupos de una misma fase comparten nombre y fechas.
-  private assertMatchesSiblings(
-    siblings: GroupPhase[],
-    values: SharedPhaseValues,
-    order: number,
-  ): void {
-    if (siblings.length === 0) return;
-    const expected = this.sharedValuesOf(siblings[0]);
-    if (
-      values.name === expected.name &&
-      values.startDate === expected.startDate &&
-      values.endDate === expected.endDate
-    ) {
-      return;
-    }
-    throw new ApplicationException(
-      ErrorCase.INVALID_OPERATION,
-      `Los grupos del orden ${order} forman una sola fase y deben compartir ` +
-        `nombre y fechas. Valores esperados: name "${expected.name}", ` +
-        `startDate ${expected.startDate ?? 'null'}, ` +
-        `endDate ${expected.endDate ?? 'null'}`,
-    );
-  }
-
-  private sharedValuesOf(group: GroupPhase): SharedPhaseValues {
-    return {
-      name: group.name,
-      startDate: group.startDate ?? null,
-      endDate: group.endDate ?? null,
-    };
   }
 }

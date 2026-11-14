@@ -88,6 +88,10 @@ export class RegistrationsService {
       const playsSport = new Set(teamSports.map((ts) => ts.team.id));
       const registrationByTeam = new Map(existing.map((r) => [r.team.id, r]));
 
+      // Las reglas "equipo existe y está activo" son de TeamsService
+      // (getActiveTeamOrFail). Aquí se evalúan sobre lo leído dentro de la
+      // transacción, para todos los equipos a la vez y sin lanzar al primero:
+      // el error final lista cada equipo con su motivo.
       const errors: RegistrationError[] = [];
       for (const teamId of dto.teamIds) {
         const team = teamsById.get(teamId);

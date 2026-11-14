@@ -10,6 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { GroupPhasesService } from '../services/group-phases.service';
+import { GroupTeamsService } from '../services/group-teams.service';
 import { CreateGroupPhaseDto } from '../dto/create-group-phase.dto';
 import { UpdateGroupPhaseDto } from '../dto/update-group-phase.dto';
 import { GroupPhaseQueryDto } from '../dto/group-phase-query.dto';
@@ -17,7 +18,10 @@ import { AssignGroupTeamDto } from '../dto/assign-group-team.dto';
 
 @Controller('group-phases')
 export class GroupPhasesController {
-  constructor(private readonly groupPhasesService: GroupPhasesService) {}
+  constructor(
+    private readonly groupPhasesService: GroupPhasesService,
+    private readonly groupTeamsService: GroupTeamsService,
+  ) {}
 
   @Get()
   findAll(@Query() query: GroupPhaseQueryDto) {
@@ -47,11 +51,11 @@ export class GroupPhasesController {
     return this.groupPhasesService.remove(id);
   }
 
-  // ---- Equipos del grupo ----
+  // ---- Equipos del grupo (GroupTeamsService) ----
 
   @Get(':id/teams')
   findTeams(@Param('id', ParseIntPipe) id: number) {
-    return this.groupPhasesService.findTeams(id);
+    return this.groupTeamsService.findTeams(id);
   }
 
   @Post(':id/teams')
@@ -59,7 +63,7 @@ export class GroupPhasesController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AssignGroupTeamDto,
   ) {
-    return this.groupPhasesService.assignTeam(id, dto);
+    return this.groupTeamsService.assignTeam(id, dto);
   }
 
   @Delete(':id/teams/:teamId')
@@ -67,6 +71,6 @@ export class GroupPhasesController {
     @Param('id', ParseIntPipe) id: number,
     @Param('teamId', ParseIntPipe) teamId: number,
   ) {
-    return this.groupPhasesService.removeTeam(id, teamId);
+    return this.groupTeamsService.removeTeam(id, teamId);
   }
 }

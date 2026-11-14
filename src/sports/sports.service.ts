@@ -45,6 +45,22 @@ export class SportsService {
     return SportMapper.toResponseDto(sport);
   }
 
+  /**
+   * Regla "el deporte debe existir (404) y estar activo (INVALID_OPERATION)".
+   * La usan Torneo y Equipo-Deporte, con el mismo mensaje.
+   */
+  async getActiveSportOrFail(id: number): Promise<Sport> {
+    const sport = await this.sportRepository.findOne({ where: { id } });
+    if (!sport) throw ResourceNotFoundException.of('Deporte', id);
+    if (!sport.active) {
+      throw new ApplicationException(
+        ErrorCase.INVALID_OPERATION,
+        `El deporte ${sport.name} está inactivo`,
+      );
+    }
+    return sport;
+  }
+
   async create(dto: CreateSportDto): Promise<SportResponseDto> {
     await this.assertNameAvailable(dto.name);
 

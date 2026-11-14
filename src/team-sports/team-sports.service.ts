@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TeamSport } from './entities/team-sport.entity';
-import { Sport } from '../sports/entities/sport.entity';
+import { SportsService } from '../sports/sports.service';
 import { TeamsService } from '../teams/teams.service';
 import { TeamSportsRepository } from './repositories/team-sports.repository';
 import { TeamSportMapper } from './mappers/team-sport.mapper';
@@ -21,10 +21,9 @@ export class TeamSportsService {
   constructor(
     @InjectRepository(TeamSport)
     private readonly teamSportRepository: Repository<TeamSport>,
-    @InjectRepository(Sport)
-    private readonly sportRepository: Repository<Sport>,
     private readonly teamSportsRepository: TeamSportsRepository,
     private readonly teamsService: TeamsService,
+    private readonly sportsService: SportsService,
   ) {}
 
   // ?teamId → deportes del equipo; ?sportId → equipos del deporte.
@@ -39,24 +38,9 @@ export class TeamSportsService {
   }
 
   async create(dto: CreateTeamSportDto): Promise<TeamSportResponseDto> {
-    const team = await this.teamsService.getTeamOrFail(dto.teamId);
-    if (!team.active) {
-      throw new ApplicationException(
-        ErrorCase.INVALID_OPERATION,
-        `El equipo ${team.name} está inactivo`,
-      );
-    }
-
-    const sport = await this.sportRepository.findOne({
-      where: { id: dto.sportId },
-    });
-    if (!sport) throw ResourceNotFoundException.of('Deporte', dto.sportId);
-    if (!sport.active) {
-      throw new ApplicationException(
-        ErrorCase.INVALID_OPERATION,
-        `El deporte ${sport.name} está inactivo`,
-      );
-    }
+    // Mensajes por defecto: "El equipo X está inactivo" / "El deporte Y está inactivo"
+    const team = await this.teamsService.getActiveTeamOrFail(dto.teamId);
+    const sport = await this.sportsService.getActiveSportOrFail(dto.sportId);
 
     if (await this.teamSportsRepository.existsAssociation(team.id, sport.id)) {
       throw new ApplicationException(
@@ -88,7 +72,9 @@ export class TeamSportsService {
     }
 
     await this.teamSportRepository.remove(association);
-    return { message: `Se retiró ${sport.name} de los deportes de ${team.name}` };
+    return {
+      message: `Se retiró ${sport.name} de los deportes de ${team.name}`,
+    };
   }
 
   private async getTeamSportOrFail(id: number): Promise<TeamSport> {

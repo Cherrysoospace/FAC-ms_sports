@@ -11,5 +11,7 @@ import { SportsRepository } from './repositories/sports.repository';
   imports: [TypeOrmModule.forFeature([Sport, Tournament, TeamSport])],
   controllers: [SportsController],
   providers: [SportsService, SportsRepository],
+  // Lo usan Torneo y Equipo-Deporte (getActiveSportOrFail).
+  exports: [SportsService],
 })
 export class SportsModule {}

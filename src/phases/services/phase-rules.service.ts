@@ -10,9 +10,46 @@ import {
 
 export type PhaseKind = 'GROUP' | 'FINAL';
 
+// Tipo de fase que no puede compartir order con cada tipo.
+interface OrderConflict {
+  // Cuántas fases del tipo en conflicto hay en ese torneo y order
+  count: (
+    tournamentId: number,
+    order: number,
+    excludeId?: number,
+  ) => Promise<number>;
+  // Cómo se nombra en el mensaje: "El orden N ya pertenece a <label>"
+  label: string;
+}
+
 // Reglas comunes a grupos y fases finales.
 @Injectable()
 export class PhaseRulesService {
+  /**
+   * Para agregar un tipo de fase basta con una entrada nueva en este mapa;
+   * assertOrderType no cambia.
+   */
+  private readonly orderConflicts: Record<PhaseKind, OrderConflict> = {
+    GROUP: {
+      count: (tournamentId, order, excludeId) =>
+        this.phasesRepository.countFinalsInOrder(
+          tournamentId,
+          order,
+          excludeId,
+        ),
+      label: 'una fase final',
+    },
+    FINAL: {
+      count: (tournamentId, order, excludeId) =>
+        this.phasesRepository.countGroupsInOrder(
+          tournamentId,
+          order,
+          excludeId,
+        ),
+      label: 'una fase de grupos',
+    },
+  };
+
   constructor(private readonly phasesRepository: PhasesRepository) {}
 
   // Las fases de un torneo cerrado (FINISHED o CANCELLED) ya no se modifican.
@@ -61,30 +98,11 @@ export class PhaseRulesService {
     type: PhaseKind,
     excludeId?: number,
   ): Promise<void> {
-    if (type === 'GROUP') {
-      const finals = await this.phasesRepository.countFinalsInOrder(
-        tournamentId,
-        order,
-        excludeId,
-      );
-      if (finals > 0) {
-        throw new ApplicationException(
-          ErrorCase.INVALID_OPERATION,
-          `El orden ${order} ya pertenece a una fase final`,
-        );
-      }
-      return;
-    }
-
-    const groups = await this.phasesRepository.countGroupsInOrder(
-      tournamentId,
-      order,
-      excludeId,
-    );
-    if (groups > 0) {
+    const conflict = this.orderConflicts[type];
+    if ((await conflict.count(tournamentId, order, excludeId)) > 0) {
       throw new ApplicationException(
         ErrorCase.INVALID_OPERATION,
-        `El orden ${order} ya pertenece a una fase de grupos`,
+        `El orden ${order} ya pertenece a ${conflict.label}`,
       );
     }
   }

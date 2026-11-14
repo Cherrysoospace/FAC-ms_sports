@@ -66,6 +66,22 @@ export class TeamsService {
     return team;
   }
 
+  /**
+   * Regla "el equipo debe existir (404) y estar activo (INVALID_OPERATION)".
+   * La usan Equipo-Deporte y los grupos, con el mismo mensaje. Carga el grupo
+   * y su torneo, como getTeamOrFail.
+   */
+  async getActiveTeamOrFail(id: number): Promise<Team> {
+    const team = await this.getTeamOrFail(id);
+    if (!team.active) {
+      throw new ApplicationException(
+        ErrorCase.INVALID_OPERATION,
+        `El equipo ${team.name} está inactivo`,
+      );
+    }
+    return team;
+  }
+
   async create(dto: CreateTeamDto): Promise<TeamResponseDto> {
     await this.assertNameAvailable(dto.name, dto.modality);
     const saved = await this.teamRepository.save(TeamMapper.toEntity(dto));

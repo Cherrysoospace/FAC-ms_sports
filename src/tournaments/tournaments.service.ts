@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tournament } from './entities/tournament.entity';
 import { Sport } from '../sports/entities/sport.entity';
+import { SportsService } from '../sports/sports.service';
 import { TournamentStatus } from './enums/tournament-status.enum';
 import { TournamentsRepository } from './repositories/tournaments.repository';
 import { TournamentMapper } from './mappers/tournament.mapper';
@@ -29,9 +30,8 @@ export class TournamentsService {
   constructor(
     @InjectRepository(Tournament)
     private readonly tournamentRepository: Repository<Tournament>,
-    @InjectRepository(Sport)
-    private readonly sportRepository: Repository<Sport>,
     private readonly tournamentsRepository: TournamentsRepository,
+    private readonly sportsService: SportsService,
   ) {}
 
   async findAll(query: TournamentQueryDto): Promise<TournamentResponseDto[]> {
@@ -149,18 +149,9 @@ export class TournamentsService {
     return { message: `Torneo #${id} eliminado correctamente` };
   }
 
-  private async getActiveSport(sportId: number): Promise<Sport> {
-    const sport = await this.sportRepository.findOne({
-      where: { id: sportId },
-    });
-    if (!sport) throw ResourceNotFoundException.of('Deporte', sportId);
-    if (!sport.active) {
-      throw new ApplicationException(
-        ErrorCase.INVALID_OPERATION,
-        'El deporte está inactivo',
-      );
-    }
-    return sport;
+  // La regla (y su mensaje) es de SportsService.
+  private getActiveSport(sportId: number): Promise<Sport> {
+    return this.sportsService.getActiveSportOrFail(sportId);
   }
 
   // El deporte no cambia si el torneo ya tiene inscripciones o fases.
