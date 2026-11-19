@@ -134,16 +134,21 @@ export class TeamsService {
   async remove(id: number): Promise<{ message: string }> {
     const team = await this.getTeamOrFail(id);
 
-    const [sports, registrations, matches] = await Promise.all([
-      this.teamsRepository.countTeamSports(id),
-      this.teamsRepository.countRegistrations(id),
-      this.teamsRepository.countMatches(id),
-    ]);
+    const [sports, registrations, matches, players, relatedTeams] =
+      await Promise.all([
+        this.teamsRepository.countTeamSports(id),
+        this.teamsRepository.countRegistrations(id),
+        this.teamsRepository.countMatches(id),
+        this.teamsRepository.countTeamPlayers(id),
+        this.teamsRepository.countRelatedTeams(id),
+      ]);
 
     const dependencies = [
       plural(sports, 'deporte', 'deportes'),
       plural(registrations, 'inscripción', 'inscripciones'),
       plural(matches, 'partido', 'partidos'),
+      plural(players, 'contrato de jugador', 'contratos de jugadores'),
+      plural(relatedTeams, 'equipo relacionado', 'equipos relacionados'),
       team.group ? `el grupo ${team.group.groupName}` : null,
     ].filter((d): d is string => d !== null);
 

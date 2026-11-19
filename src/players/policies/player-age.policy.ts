@@ -1,4 +1,5 @@
 import { ApplicationException, ErrorCase } from '../../common/exceptions';
+import { isCalendarDate, toDateOnly } from '../../common/dates/date-only';
 
 // Reglas de la fecha de nacimiento y cálculo de la edad. Sin dependencias.
 export class PlayerAgePolicy {
@@ -10,13 +11,13 @@ export class PlayerAgePolicy {
    * entre MIN_AGE y MAX_AGE. Lanza INVALID_OPERATION (400).
    */
   static assertValidBirthDate(birthDate: string, today = new Date()): void {
-    if (!PlayerAgePolicy.isCalendarDate(birthDate)) {
+    if (!isCalendarDate(birthDate)) {
       throw new ApplicationException(
         ErrorCase.INVALID_OPERATION,
         `La fecha de nacimiento ${birthDate} no existe`,
       );
     }
-    if (birthDate > PlayerAgePolicy.toDateOnly(today)) {
+    if (birthDate > toDateOnly(today)) {
       throw new ApplicationException(
         ErrorCase.INVALID_OPERATION,
         'La fecha de nacimiento no puede ser futura',
@@ -39,22 +40,5 @@ export class PlayerAgePolicy {
       today.getMonth() + 1 > month ||
       (today.getMonth() + 1 === month && today.getDate() >= day);
     return today.getFullYear() - year - (hadBirthday ? 0 : 1);
-  }
-
-  // '2001-02-30' tiene el formato correcto pero no existe.
-  private static isCalendarDate(value: string): boolean {
-    const [year, month, day] = value.split('-').map(Number);
-    const date = new Date(Date.UTC(year, month - 1, day));
-    return (
-      date.getUTCFullYear() === year &&
-      date.getUTCMonth() === month - 1 &&
-      date.getUTCDate() === day
-    );
-  }
-
-  private static toDateOnly(date: Date): string {
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${date.getFullYear()}-${month}-${day}`;
   }
 }

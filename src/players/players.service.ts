@@ -9,8 +9,10 @@ import { CreatePlayerDto } from './dto/create-player.dto';
 import { UpdatePlayerDto } from './dto/update-player.dto';
 import { PlayerQueryDto } from './dto/player-query.dto';
 import { PlayerResponseDto } from './dto/player-response.dto';
+import { joinList, plural } from '../common/text/spanish-list';
 import {
   ApplicationException,
+  BusinessRuleException,
   ErrorCase,
   ResourceNotFoundException,
 } from '../common/exceptions';
@@ -25,11 +27,20 @@ export class PlayersService {
 
   async findAll(query: PlayerQueryDto): Promise<PlayerResponseDto[]> {
     const players = await this.playersRepository.findByFilters(query);
-    return PlayerMapper.toResponseDtoList(players);
+    const currentTeams = await this.playersRepository.currentTeamsByPlayerIds(
+      players.map((p) => p.id),
+    );
+    return PlayerMapper.toResponseDtoList(players, currentTeams);
   }
 
   async findOne(id: number): Promise<PlayerResponseDto> {
-    return PlayerMapper.toResponseDto(await this.getPlayerOrFail(id));
+    const player = await this.getPlayerOrFail(id);
+    const currentTeams = await this.playersRepository.currentTeamsByPlayerIds([
+      id,
+    ]);
+    return PlayerMapper.toResponseDto(player, {
+      currentTeams: currentTeams.get(id) ?? [],
+    });
   }
 
   // Lo usan otros módulos (Equipo-Jugador, Habilidad-Jugador, Anotación).
@@ -80,6 +91,24 @@ export class PlayersService {
 
   async remove(id: number): Promise<{ message: string }> {
     const player = await this.getPlayerOrFail(id);
+
+    const [contracts, skills] = await Promise.all([
+      this.playersRepository.countContracts(id),
+      this.playersRepository.countSkills(id),
+    ]);
+
+    const dependencies = [
+      plural(contracts, 'contrato con equipos', 'contratos con equipos'),
+      plural(skills, 'habilidad', 'habilidades'),
+    ].filter((d): d is string => d !== null);
+
+    if (dependencies.length > 0) {
+      throw new BusinessRuleException(
+        `No se puede eliminar el jugador porque tiene ${joinList(dependencies)} ` +
+          'asociados. Desactívelo con PATCH { "active": false }',
+      );
+    }
+
     await this.playerRepository.remove(player);
     return { message: `Jugador #${id} eliminado correctamente` };
   }

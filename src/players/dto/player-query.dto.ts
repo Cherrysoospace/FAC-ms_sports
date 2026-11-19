@@ -1,5 +1,12 @@
-import { Transform } from 'class-transformer';
-import { IsBoolean, IsOptional, IsString, MaxLength } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { ToBoolean } from '../../common/validation';
 
 // Filtros de GET /players
@@ -19,4 +26,18 @@ export class PlayerQueryDto {
   @IsOptional()
   @IsBoolean({ message: 'El filtro de activos debe ser verdadero o falso' })
   active?: boolean;
+
+  // Jugadores con contrato vigente en ese equipo
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt({ message: 'El equipo debe ser un número entero' })
+  @Min(1, { message: 'El identificador del equipo no es válido' })
+  teamId?: number;
+
+  // Jugadores de equipos que juegan ese deporte
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt({ message: 'El deporte debe ser un número entero' })
+  @Min(1, { message: 'El identificador del deporte no es válido' })
+  sportId?: number;
 }

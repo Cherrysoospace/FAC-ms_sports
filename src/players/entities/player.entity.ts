@@ -1,5 +1,13 @@
-import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import {
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
 import { DominantFoot } from '../enums/dominant-foot.enum';
+import { TeamPlayer } from '../../team-players/entities/team-player.entity';
+import { PlayerSkill } from '../../player-skills/entities/player-skill.entity';
 
 @Entity('players')
 @Unique('UQ_players_document_number', ['documentNumber'])
@@ -40,4 +48,15 @@ export class Player {
 
   @Column({ name: 'active', type: 'boolean', default: true })
   active!: boolean;
+
+  // Contratos con equipos (vigentes y del historial)
+  @OneToMany(() => TeamPlayer, (teamPlayer) => teamPlayer.player, {
+    cascade: false,
+  })
+  teamPlayers?: TeamPlayer[];
+
+  @OneToMany(() => PlayerSkill, (playerSkill) => playerSkill.player, {
+    cascade: false,
+  })
+  playerSkills?: PlayerSkill[];
 }

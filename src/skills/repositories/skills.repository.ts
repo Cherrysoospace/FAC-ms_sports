@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Skill } from '../entities/skill.entity';
+import { PlayerSkill } from '../../player-skills/entities/player-skill.entity';
 import { SkillQueryDto } from '../dto/skill-query.dto';
 import { escapeLike } from '../../common/database/query.util';
 
@@ -11,7 +12,16 @@ export class SkillsRepository {
   constructor(
     @InjectRepository(Skill)
     private readonly skillRepository: Repository<Skill>,
+    @InjectRepository(PlayerSkill)
+    private readonly playerSkillRepository: Repository<PlayerSkill>,
   ) {}
+
+  // Jugadores que tienen asignada la habilidad.
+  countPlayers(skillId: number): Promise<number> {
+    return this.playerSkillRepository.count({
+      where: { skill: { id: skillId } },
+    });
+  }
 
   findByFilters(query: SkillQueryDto): Promise<Skill[]> {
     const qb = this.skillRepository

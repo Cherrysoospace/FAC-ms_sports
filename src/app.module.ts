@@ -15,6 +15,10 @@ import { LocationsModule } from './locations/locations.module';
 import { TournamentVenuesModule } from './tournament-venues/tournament-venues.module';
 import { PlayersModule } from './players/players.module';
 import { SkillsModule } from './skills/skills.module';
+import { TeamPlayersModule } from './team-players/team-players.module';
+import { PlayerSkillsModule } from './player-skills/player-skills.module';
+import { TeamRelationsModule } from './team-relations/team-relations.module';
+import { PlayerProfilesModule } from './player-profiles/player-profiles.module';
 
 @Module({
   imports: [
@@ -45,6 +49,10 @@ import { SkillsModule } from './skills/skills.module';
     TournamentVenuesModule,
     PlayersModule,
     SkillsModule,
+    TeamPlayersModule,
+    PlayerSkillsModule,
+    TeamRelationsModule,
+    PlayerProfilesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

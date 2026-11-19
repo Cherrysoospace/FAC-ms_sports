@@ -1,5 +1,12 @@
-import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import {
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
 import { SkillCategory } from '../enums/skill-category.enum';
+import { PlayerSkill } from '../../player-skills/entities/player-skill.entity';
 
 @Entity('skills')
 @Unique('UQ_skills_name', ['name'])
@@ -15,4 +22,9 @@ export class Skill {
 
   @Column({ name: 'description', type: 'varchar', length: 500 })
   description!: string;
+
+  @OneToMany(() => PlayerSkill, (playerSkill) => playerSkill.skill, {
+    cascade: false,
+  })
+  playerSkills?: PlayerSkill[];
 }

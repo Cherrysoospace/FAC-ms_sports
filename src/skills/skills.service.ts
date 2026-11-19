@@ -8,8 +8,10 @@ import { CreateSkillDto } from './dto/create-skill.dto';
 import { UpdateSkillDto } from './dto/update-skill.dto';
 import { SkillQueryDto } from './dto/skill-query.dto';
 import { SkillResponseDto } from './dto/skill-response.dto';
+import { formatCount } from '../common/text/spanish-list';
 import {
   ApplicationException,
+  BusinessRuleException,
   ErrorCase,
   ResourceNotFoundException,
 } from '../common/exceptions';
@@ -57,6 +59,16 @@ export class SkillsService {
 
   async remove(id: number): Promise<{ message: string }> {
     const skill = await this.getSkillOrFail(id);
+
+    const players = await this.skillsRepository.countPlayers(id);
+    if (players > 0) {
+      throw new BusinessRuleException(
+        `No se puede eliminar '${skill.name}' porque está asignada a ` +
+          `${formatCount(players, 'jugador', 'jugadores')}. Retírela primero ` +
+          'de sus habilidades',
+      );
+    }
+
     await this.skillRepository.remove(skill);
     return { message: `Habilidad #${id} eliminada correctamente` };
   }

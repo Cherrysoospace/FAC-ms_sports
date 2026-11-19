@@ -2,11 +2,14 @@ import {
   Column,
   Entity,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
+import { TeamPlayer } from '../../team-players/entities/team-player.entity';
 import { TeamModality } from '../enums/team-modality.enum';
 import { TeamSport } from '../../team-sports/entities/team-sport.entity';
 import { Registration } from '../../registrations/entities/registration.entity';
@@ -57,4 +60,37 @@ export class Team {
 
   @OneToMany(() => Match, (match) => match.awayTeam, { cascade: false })
   awayMatches?: Match[];
+
+  // Equipo n — n Jugador (contratos vigentes y del historial)
+  @OneToMany(() => TeamPlayer, (teamPlayer) => teamPlayer.team, {
+    cascade: false,
+  })
+  teamPlayers?: TeamPlayer[];
+
+  /**
+   * Equipo n — n Equipo (autorrelación del diagrama, sin clase asociativa):
+   * tabla pura team_relations. Es simétrica: A–B se guarda en ambos sentidos
+   * para consultarla siempre desde team_id (TeamRelationsRepository).
+   * Sin borrado en cascada (acuerdo del equipo): ambas FK son NO ACTION;
+   * TypeORM toma la de related_team_id del lado inverso (relatedBy).
+   */
+  @ManyToMany(() => Team, (team) => team.relatedBy, {
+    cascade: false,
+    onDelete: 'NO ACTION',
+    onUpdate: 'NO ACTION',
+  })
+  @JoinTable({
+    name: 'team_relations',
+    joinColumn: { name: 'team_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'related_team_id', referencedColumnName: 'id' },
+  })
+  relatedTeams?: Team[];
+
+  // Lado inverso de relatedTeams; por la simetría contiene los mismos equipos.
+  @ManyToMany(() => Team, (team) => team.relatedTeams, {
+    cascade: false,
+    onDelete: 'NO ACTION',
+    onUpdate: 'NO ACTION',
+  })
+  relatedBy?: Team[];
 }

@@ -7,6 +7,7 @@ import { TeamSport } from '../../team-sports/entities/team-sport.entity';
 import { Registration } from '../../registrations/entities/registration.entity';
 import { RegistrationStatus } from '../../registrations/enums/registration-status.enum';
 import { Match } from '../../matches/entities/match.entity';
+import { TeamPlayer } from '../../team-players/entities/team-player.entity';
 import { TournamentStatusPolicy } from '../../tournaments/policies/tournament-status.policy';
 import { TeamQueryDto } from '../dto/team-query.dto';
 import { TeamSportSummaryDto } from '../dto/team-response.dto';
@@ -34,6 +35,8 @@ export class TeamsRepository {
     private readonly registrationRepository: Repository<Registration>,
     @InjectRepository(Match)
     private readonly matchRepository: Repository<Match>,
+    @InjectRepository(TeamPlayer)
+    private readonly teamPlayerRepository: Repository<TeamPlayer>,
   ) {}
 
   findByFilters(query: TeamQueryDto): Promise<Team[]> {
@@ -165,5 +168,21 @@ export class TeamsRepository {
     return this.matchRepository.count({
       where: [{ homeTeam: { id: teamId } }, { awayTeam: { id: teamId } }],
     });
+  }
+
+  // Todos los contratos (también el historial de traspasos).
+  countTeamPlayers(teamId: number): Promise<number> {
+    return this.teamPlayerRepository.count({
+      where: { team: { id: teamId } },
+    });
+  }
+
+  // Equipos relacionados (autorrelación team_relations).
+  countRelatedTeams(teamId: number): Promise<number> {
+    return this.teamRepository
+      .createQueryBuilder('team')
+      .innerJoin('team.relatedTeams', 'related')
+      .where('team.id = :teamId', { teamId })
+      .getCount();
   }
 }

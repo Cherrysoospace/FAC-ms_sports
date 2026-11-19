@@ -1,8 +1,16 @@
 import { Player } from '../entities/player.entity';
 import { CreatePlayerDto } from '../dto/create-player.dto';
 import { UpdatePlayerDto } from '../dto/update-player.dto';
-import { PlayerResponseDto } from '../dto/player-response.dto';
+import {
+  PlayerResponseDto,
+  PlayerTeamSummaryDto,
+} from '../dto/player-response.dto';
 import { PlayerAgePolicy } from '../policies/player-age.policy';
+
+// Datos que no vienen en la entidad: los calcula el repositorio.
+export interface PlayerExtras {
+  currentTeams: PlayerTeamSummaryDto[];
+}
 
 export class PlayerMapper {
   static toEntity(dto: CreatePlayerDto): Player {
@@ -34,7 +42,10 @@ export class PlayerMapper {
     return entity;
   }
 
-  static toResponseDto(entity: Player): PlayerResponseDto {
+  static toResponseDto(
+    entity: Player,
+    extras: PlayerExtras,
+  ): PlayerResponseDto {
     const dto = new PlayerResponseDto();
     dto.id = entity.id;
     dto.fullName = entity.fullName;
@@ -46,10 +57,19 @@ export class PlayerMapper {
     dto.heightCm = entity.heightCm;
     dto.dominantFoot = entity.dominantFoot ?? null;
     dto.active = entity.active;
+    dto.currentTeams = extras.currentTeams;
     return dto;
   }
 
-  static toResponseDtoList(entities: Player[]): PlayerResponseDto[] {
-    return entities.map((e) => PlayerMapper.toResponseDto(e));
+  // `teamsById` trae los equipos vigentes de cada jugador; si falta, ninguno.
+  static toResponseDtoList(
+    entities: Player[],
+    teamsById: Map<number, PlayerTeamSummaryDto[]>,
+  ): PlayerResponseDto[] {
+    return entities.map((e) =>
+      PlayerMapper.toResponseDto(e, {
+        currentTeams: teamsById.get(e.id) ?? [],
+      }),
+    );
   }
 }
