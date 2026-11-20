@@ -126,6 +126,10 @@
     {
       "key": "finalPhaseId",
       "value": ""
+    },
+    {
+      "key": "matchId",
+      "value": ""
     }
   ],
   "item": [
@@ -4119,8 +4123,706 @@
       ]
     },
     {
-      "name": "18 · Borrado con información asociada (409) y limpieza",
-      "description": "Primero comprueba que no se borra nada con información asociada (409, sin cascada). Luego retira lo que se puede. Equipos, jugadores, contratos, inscripciones y el torneo (cancelado) quedan: son historial y no tienen DELETE.",
+      "name": "18 · Partidos (HU-GC-06)",
+      "item": [
+        {
+          "name": "Programar partido (fase final)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('matchId', pm.response.json().id);",
+                  "pm.test('Programado y con apuestas abiertas', () => { const m = pm.response.json(); pm.expect(m.status).to.eql('SCHEDULED'); pm.expect(m.bettingOpen).to.eql(true); });"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const start = new Date(pm.collectionVariables.get('tournamentStart') + 'T20:00:00.000Z');",
+                  "pm.collectionVariables.set('matchAt', new Date(start.getTime() + 86400000).toISOString());"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phaseId\": {{finalPhaseId}},\n  \"homeTeamId\": {{teamId}},\n  \"awayTeamId\": {{team2Id}},\n  \"venueId\": {{venueId}},\n  \"ballId\": {{ballId}},\n  \"scheduledAt\": \"{{matchAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/matches",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[400] Equipo contra sí mismo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phaseId\": {{finalPhaseId}},\n  \"homeTeamId\": {{teamId}},\n  \"awayTeamId\": {{teamId}},\n  \"venueId\": {{venueId}},\n  \"ballId\": {{ballId}},\n  \"scheduledAt\": \"{{matchAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/matches",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Pelota ya asignada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phaseId\": {{finalPhaseId}},\n  \"homeTeamId\": {{team2Id}},\n  \"awayTeamId\": {{teamId}},\n  \"venueId\": {{venueId}},\n  \"ballId\": {{ballId}},\n  \"scheduledAt\": \"{{matchAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/matches",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[400] Datos inválidos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/matches",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Partidos del torneo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/matches?tournamentId={{tournamentId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches"
+              ],
+              "query": [
+                {
+                  "key": "tournamentId",
+                  "value": "{{tournamentId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver partido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/matches/{{matchId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{matchId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[400] Finalizar por PATCH (solo con el resultado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"FINISHED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/matches/{{matchId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{matchId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Iniciar partido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Cierra las apuestas', () => pm.expect(pm.response.json().bettingOpen).to.eql(false));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/matches/{{matchId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{matchId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[400] Editar un partido en curso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scheduledAt\": \"{{matchAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/matches/{{matchId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{matchId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "19 · Posiciones y pizarra (HU-GC-09)",
+      "item": [
+        {
+          "name": "Registrar foto del campo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Dos posiciones', () => pm.expect(pm.response.json().recorded).to.eql(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matchId\": {{matchId}},\n  \"positions\": [\n    {\n      \"playerId\": {{playerId}},\n      \"x\": 35.5,\n      \"y\": 42\n    },\n    {\n      \"ball\": true,\n      \"x\": 36,\n      \"y\": 43\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/match-positions",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "match-positions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[400] Jugador y pelota en la misma posición",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matchId\": {{matchId}},\n  \"positions\": [\n    {\n      \"playerId\": {{playerId}},\n      \"ball\": true,\n      \"x\": 1,\n      \"y\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/match-positions",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "match-positions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[400] Coordenada fuera del campo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matchId\": {{matchId}},\n  \"positions\": [\n    {\n      \"ball\": true,\n      \"x\": 120,\n      \"y\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/match-positions",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "match-positions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Pizarra del partido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const board = pm.response.json();",
+                  "pm.test('Pelota del partido con posición', () => pm.expect(board.ball.location.x).to.eql(36));",
+                  "pm.test('El jugador aparece con su posición', () => pm.expect(board.players.find((p) => p.id === Number(pm.collectionVariables.get('playerId'))).location.x).to.eql(35.5));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/match-positions?matchId={{matchId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "match-positions"
+              ],
+              "query": [
+                {
+                  "key": "matchId",
+                  "value": "{{matchId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Aficionado ve la pizarra",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/match-positions?matchId={{matchId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "match-positions"
+              ],
+              "query": [
+                {
+                  "key": "matchId",
+                  "value": "{{matchId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "[403] Aficionado intenta registrar posiciones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matchId\": {{matchId}},\n  \"positions\": [\n    {\n      \"ball\": true,\n      \"x\": 1,\n      \"y\": 1\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/match-positions",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "match-positions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancelar partido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CANCELLED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/matches/{{matchId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{matchId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Eliminar partido con seguimiento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/matches/{{matchId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{matchId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "20 · Borrado con información asociada (409) y limpieza",
+      "description": "Primero comprueba que no se borra nada con información asociada (409, sin cascada). Luego retira lo que se puede. Equipos, jugadores, contratos, inscripciones, la final con su partido cancelado y el torneo (cancelado) quedan: son historial.",
       "item": [
         {
           "name": "[409] Eliminar equipo con información asociada",
@@ -4322,14 +5024,14 @@
           }
         },
         {
-          "name": "Eliminar final",
+          "name": "[409] Eliminar final con partidos",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
                 ]
               }
             }
@@ -4533,14 +5235,14 @@
           }
         },
         {
-          "name": "Eliminar escenario",
+          "name": "[409] Eliminar escenario con partidos",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
                 ]
               }
             }
@@ -4561,14 +5263,14 @@
           }
         },
         {
-          "name": "Eliminar pelota",
+          "name": "[409] Eliminar pelota asignada a un partido",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
                 ]
               }
             }
