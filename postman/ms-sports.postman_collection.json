@@ -1,0 +1,4289 @@
+{
+  "info": {
+    "name": "FAC · ms-sports (Gestión deportiva)",
+    "description": "Colección del microservicio ms-sports (NestJS, prefijo /gestion-deportiva).\n\nCómo usarla:\n1. Levantar MySQL, ms_security (puerto 8181) y ms-sports (puerto 3001).\n2. Ajustar las variables de la colección si cambian puertos o credenciales.\n3. Correr la colección completa en orden (Collection Runner o `npx newman run`): el login guarda el token y cada POST guarda el id que usan las siguientes peticiones. Cada corrida usa un runId para no chocar con datos anteriores.\n\nCada petición verifica su código de estado; las marcadas [400]/[404]/[409] prueban las validaciones y reglas de negocio.\nToda la colección usa Bearer {{token}}: queda lista para cuando ms-sports valide permisos con el SecurityGuard.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "sportsUrl",
+      "value": "http://localhost:3001/gestion-deportiva"
+    },
+    {
+      "key": "securityUrl",
+      "value": "http://localhost:8181"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@uc.edu.co"
+    },
+    {
+      "key": "adminPassword",
+      "value": "Admin123!"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "runId",
+      "value": ""
+    },
+    {
+      "key": "sportId",
+      "value": ""
+    },
+    {
+      "key": "ballId",
+      "value": ""
+    },
+    {
+      "key": "teamId",
+      "value": ""
+    },
+    {
+      "key": "team2Id",
+      "value": ""
+    },
+    {
+      "key": "teamSportId",
+      "value": ""
+    },
+    {
+      "key": "teamSport2Id",
+      "value": ""
+    },
+    {
+      "key": "playerId",
+      "value": ""
+    },
+    {
+      "key": "skillId",
+      "value": ""
+    },
+    {
+      "key": "contractId",
+      "value": ""
+    },
+    {
+      "key": "contract2Id",
+      "value": ""
+    },
+    {
+      "key": "playerSkillId",
+      "value": ""
+    },
+    {
+      "key": "venueId",
+      "value": ""
+    },
+    {
+      "key": "childVenueId",
+      "value": ""
+    },
+    {
+      "key": "locationId",
+      "value": ""
+    },
+    {
+      "key": "tournamentId",
+      "value": ""
+    },
+    {
+      "key": "tournamentVenueId",
+      "value": ""
+    },
+    {
+      "key": "registrationId",
+      "value": ""
+    },
+    {
+      "key": "groupPhaseId",
+      "value": ""
+    },
+    {
+      "key": "finalPhaseId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "00 · Autenticación (ms_security)",
+      "description": "Login con el usuario de la semilla. Guarda el token (Bearer de toda la colección), un runId para nombres únicos y las fechas del torneo calculadas desde hoy.",
+      "item": [
+        {
+          "name": "Login administrador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('token', body.accessToken);",
+                  "pm.test('Devuelve accessToken', () => pm.expect(body.accessToken).to.be.a('string'));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const day = 24 * 60 * 60 * 1000;",
+                  "const now = Date.now();",
+                  "const iso = (ms) => new Date(ms).toISOString();",
+                  "const date = (ms) => iso(ms).slice(0, 10);",
+                  "pm.collectionVariables.set('runId', String(now).slice(-6));",
+                  "pm.collectionVariables.set('registrationOpensAt', iso(now - day));",
+                  "pm.collectionVariables.set('registrationClosesAt', iso(now + 7 * day));",
+                  "pm.collectionVariables.set('tournamentStart', date(now + 14 * day));",
+                  "pm.collectionVariables.set('tournamentEnd', date(now + 90 * day));",
+                  "pm.collectionVariables.set('contractStart', date(now - 400 * day));",
+                  "pm.collectionVariables.set('contractEnd', date(now + 365 * day));",
+                  "pm.collectionVariables.set('releaseDate', date(now - 30 * day));",
+                  "pm.collectionVariables.set('newContractStart', date(now - 29 * day));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{securityUrl}}/api/auth/login",
+              "host": [
+                "{{securityUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Health (público)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 · Deportes (HU-GD-01)",
+      "item": [
+        {
+          "name": "Crear deporte",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('sportId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Fútbol {{runId}}\",\n  \"description\": \"Fútbol de campo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/sports",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "sports"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar deportes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/sports?active=true",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "sports"
+              ],
+              "query": [
+                {
+                  "key": "active",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver deporte",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/sports/{{sportId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "sports",
+                "{{sportId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar deporte",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Fútbol de once\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/sports/{{sportId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "sports",
+                "{{sportId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Deporte repetido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"fútbol {{runId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/sports",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "sports"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[400] Deporte sin nombre",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/sports",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "sports"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 · Pelotas",
+      "item": [
+        {
+          "name": "Crear pelota",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('ballId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"brand\": \"Golty\",\n  \"model\": \"Profesional {{runId}}\",\n  \"size\": \"5\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/balls",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "balls"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar pelotas disponibles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/balls?available=true",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "balls"
+              ],
+              "query": [
+                {
+                  "key": "available",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver pelota",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/balls/{{ballId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "balls",
+                "{{ballId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar pelota",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"size\": \"4\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/balls/{{ballId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "balls",
+                "{{ballId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 · Equipos (HU-GD-02)",
+      "item": [
+        {
+          "name": "Crear equipo A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('teamId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Atlético {{runId}}\",\n  \"city\": \"Manizales\",\n  \"modality\": \"MALE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/teams",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear equipo B",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('team2Id', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Deportivo {{runId}}\",\n  \"city\": \"Pereira\",\n  \"modality\": \"MALE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/teams",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar equipos (búsqueda)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Trae los 2 equipos', () => pm.expect(pm.response.json()).to.have.length(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/teams?search={{runId}}&active=true",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "{{runId}}"
+                },
+                {
+                  "key": "active",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver equipo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/teams/{{teamId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams",
+                "{{teamId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar equipo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"city\": \"Manizales, Caldas\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/teams/{{teamId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams",
+                "{{teamId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Equipo repetido en la modalidad",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"ATLÉTICO {{runId}}\",\n  \"city\": \"Otra\",\n  \"modality\": \"MALE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/teams",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[400] Equipo sin datos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/teams",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[404] Equipo inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/teams/999999",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams",
+                "999999"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 · Equipo-Deporte (HU-GD-03)",
+      "item": [
+        {
+          "name": "Asociar deporte al equipo A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('teamSportId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamId\": {{teamId}},\n  \"sportId\": {{sportId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/team-sports",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-sports"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Asociar deporte al equipo B",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('teamSport2Id', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamId\": {{team2Id}},\n  \"sportId\": {{sportId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/team-sports",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-sports"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Asociación repetida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamId\": {{teamId}},\n  \"sportId\": {{sportId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/team-sports",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-sports"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Deportes del equipo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/team-sports?teamId={{teamId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-sports"
+              ],
+              "query": [
+                {
+                  "key": "teamId",
+                  "value": "{{teamId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Equipos del deporte",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/team-sports?sportId={{sportId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-sports"
+              ],
+              "query": [
+                {
+                  "key": "sportId",
+                  "value": "{{sportId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver asociación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/team-sports/{{teamSportId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-sports",
+                "{{teamSportId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 · Equipos relacionados (Equipo n—n Equipo)",
+      "item": [
+        {
+          "name": "Relacionar equipos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"relatedTeamId\": {{team2Id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/teams/{{teamId}}/related-teams",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams",
+                "{{teamId}}",
+                "related-teams"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Relacionados del equipo B (simétrica)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Incluye al equipo A', () => pm.expect(pm.response.json().map((t) => t.id)).to.include(Number(pm.collectionVariables.get('teamId'))));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/teams/{{team2Id}}/related-teams",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams",
+                "{{team2Id}}",
+                "related-teams"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Ya relacionados",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"relatedTeamId\": {{teamId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/teams/{{team2Id}}/related-teams",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams",
+                "{{team2Id}}",
+                "related-teams"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[400] Relacionar consigo mismo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"relatedTeamId\": {{teamId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/teams/{{teamId}}/related-teams",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams",
+                "{{teamId}}",
+                "related-teams"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 · Jugadores (HU-GD-04)",
+      "item": [
+        {
+          "name": "Crear jugador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('playerId', pm.response.json().id);",
+                  "pm.test('Calcula la edad', () => pm.expect(pm.response.json().age).to.be.a('number'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Juan Pérez {{runId}}\",\n  \"documentNumber\": \"10{{runId}}\",\n  \"birthDate\": \"2002-05-10\",\n  \"nationality\": \"Colombia\",\n  \"position\": \"DEL\",\n  \"heightCm\": 180,\n  \"dominantFoot\": \"RIGHT\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/players",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "players"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Documento repetido (con puntos)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Otro\",\n  \"documentNumber\": \"10.{{runId}}\",\n  \"birthDate\": \"2000-01-01\",\n  \"nationality\": \"Colombia\",\n  \"position\": \"MC\",\n  \"heightCm\": 175\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/players",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "players"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[400] Fecha de nacimiento futura",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Futuro\",\n  \"documentNumber\": \"99{{runId}}\",\n  \"birthDate\": \"2099-01-01\",\n  \"nationality\": \"Colombia\",\n  \"position\": \"MC\",\n  \"heightCm\": 175\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/players",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "players"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[400] Datos inválidos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"\",\n  \"documentNumber\": \"x\",\n  \"heightCm\": 50\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/players",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "players"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buscar jugadores",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/players?search={{runId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "players"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "{{runId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver jugador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/players/{{playerId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar jugador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"heightCm\": 181,\n  \"dominantFoot\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/players/{{playerId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 · Habilidades (HU-GD-06, solo backend)",
+      "item": [
+        {
+          "name": "Crear habilidad",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('skillId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Velocidad {{runId}}\",\n  \"category\": \"PHYSICAL\",\n  \"description\": \"Capacidad para desplazarse rápidamente.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/skills",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "skills"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Habilidad repetida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"VELOCIDAD {{runId}}\",\n  \"category\": \"TECHNICAL\",\n  \"description\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/skills",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "skills"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[400] Categoría inválida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Regate\",\n  \"category\": \"OTRA\",\n  \"description\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/skills",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "skills"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar habilidades físicas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/skills?category=PHYSICAL",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "skills"
+              ],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "PHYSICAL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver habilidad",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/skills/{{skillId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "skills",
+                "{{skillId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar habilidad",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Explosividad y velocidad máxima.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/skills/{{skillId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "skills",
+                "{{skillId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 · Equipo-Jugador (HU-GD-05)",
+      "item": [
+        {
+          "name": "Asignar jugador al equipo A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('contractId', pm.response.json().id);",
+                  "pm.test('Contrato vigente', () => pm.expect(pm.response.json().stage).to.eql('CURRENT'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamId\": {{teamId}},\n  \"playerId\": {{playerId}},\n  \"startDate\": \"{{contractStart}}\",\n  \"endDate\": \"{{contractEnd}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/team-players",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-players"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Periodo cruzado con el mismo equipo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Mensaje: ya se encuentra asociado', () => pm.expect(JSON.stringify(pm.response.json())).to.include('ya se encuentra asociado'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamId\": {{teamId}},\n  \"playerId\": {{playerId}},\n  \"startDate\": \"{{contractStart}}\",\n  \"endDate\": \"{{contractEnd}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/team-players",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-players"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[400] Inicio posterior al fin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamId\": {{team2Id}},\n  \"playerId\": {{playerId}},\n  \"startDate\": \"2030-01-01\",\n  \"endDate\": \"2029-01-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/team-players",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-players"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Editar fechas del contrato",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"endDate\": \"{{contractEnd}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/team-players/{{contractId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-players",
+                "{{contractId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Plantilla vigente del equipo A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/team-players?teamId={{teamId}}&stage=CURRENT",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-players"
+              ],
+              "query": [
+                {
+                  "key": "teamId",
+                  "value": "{{teamId}}"
+                },
+                {
+                  "key": "stage",
+                  "value": "CURRENT"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver contrato",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/team-players/{{contractId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-players",
+                "{{contractId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Retirar (traspaso)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Queda en el historial', () => pm.expect(pm.response.json().contract.stage).to.eql('PAST'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"TRANSFERRED\",\n  \"releaseDate\": \"{{releaseDate}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/team-players/{{contractId}}/release",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-players",
+                "{{contractId}}",
+                "release"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Retirar de nuevo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"TRANSFERRED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/team-players/{{contractId}}/release",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-players",
+                "{{contractId}}",
+                "release"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Asignar al equipo B (nuevo club)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('contract2Id', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamId\": {{team2Id}},\n  \"playerId\": {{playerId}},\n  \"startDate\": \"{{newContractStart}}\",\n  \"endDate\": \"{{contractEnd}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/team-players",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-players"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Historial del jugador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Dos contratos', () => pm.expect(pm.response.json()).to.have.length(2));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/team-players?playerId={{playerId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-players"
+              ],
+              "query": [
+                {
+                  "key": "playerId",
+                  "value": "{{playerId}}"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 · Habilidad-Jugador (HU-GD-07)",
+      "item": [
+        {
+          "name": "Asignar habilidad al jugador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('playerSkillId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": {{playerId}},\n  \"skillId\": {{skillId}},\n  \"level\": 85\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/player-skills",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "player-skills"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Habilidad ya asignada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": {{playerId}},\n  \"skillId\": {{skillId}},\n  \"level\": 50\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/player-skills",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "player-skills"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[400] Nivel fuera de rango",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": {{playerId}},\n  \"skillId\": {{skillId}},\n  \"level\": 150\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/player-skills",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "player-skills"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cambiar nivel",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"level\": 91\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/player-skills/{{playerSkillId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "player-skills",
+                "{{playerSkillId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Habilidades del jugador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/player-skills?playerId={{playerId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "player-skills"
+              ],
+              "query": [
+                {
+                  "key": "playerId",
+                  "value": "{{playerId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Jugadores con la habilidad",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/player-skills?skillId={{skillId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "player-skills"
+              ],
+              "query": [
+                {
+                  "key": "skillId",
+                  "value": "{{skillId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver asociación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/player-skills/{{playerSkillId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "player-skills",
+                "{{playerSkillId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 · Perfil del jugador (HU-GD-08)",
+      "item": [
+        {
+          "name": "Perfil deportivo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const profile = pm.response.json();",
+                  "pm.test('Equipo actual: B', () => pm.expect(profile.currentTeams.map((c) => c.team.id)).to.eql([Number(pm.collectionVariables.get('team2Id'))]));",
+                  "pm.test('Historial: A (traspaso)', () => pm.expect(profile.teamHistory[0].releaseReason).to.eql('TRANSFERRED'));",
+                  "pm.test('Una habilidad', () => pm.expect(profile.skills).to.have.length(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/players/{{playerId}}/profile",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}",
+                "profile"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[404] Perfil inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/players/999999/profile",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "players",
+                "999999",
+                "profile"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11 · Escenarios",
+      "item": [
+        {
+          "name": "Crear escenario principal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('venueId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Estadio {{runId}}\",\n  \"address\": \"Cra 23 # 62-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/venues",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "venues"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear espacio interno",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('childVenueId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cancha auxiliar {{runId}}\",\n  \"parentId\": {{venueId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/venues",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "venues"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar escenarios principales",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/venues?roots=true",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "venues"
+              ],
+              "query": [
+                {
+                  "key": "roots",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver escenario (con espacios internos)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Tiene 1 espacio interno', () => pm.expect(pm.response.json().children).to.have.length(1));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/venues/{{venueId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "venues",
+                "{{venueId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar escenario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"Carrera 23 # 62-01, Manizales\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/venues/{{venueId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "venues",
+                "{{venueId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[400] Escenario dentro de sí mismo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"parentId\": {{childVenueId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/venues/{{venueId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "venues",
+                "{{venueId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "12 · Localidades",
+      "item": [
+        {
+          "name": "Crear localidad",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('locationId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"venueId\": {{venueId}},\n  \"name\": \"Oriental\",\n  \"capacity\": 12000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/locations",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "locations"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Localidad repetida en el escenario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"venueId\": {{venueId}},\n  \"name\": \"oriental\",\n  \"capacity\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/locations",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "locations"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[400] Capacidad inválida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"venueId\": {{venueId}},\n  \"name\": \"Sur\",\n  \"capacity\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/locations",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "locations"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Localidades del escenario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/locations?venueId={{venueId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "locations"
+              ],
+              "query": [
+                {
+                  "key": "venueId",
+                  "value": "{{venueId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver localidad",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/locations/{{locationId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "locations",
+                "{{locationId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar capacidad",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"capacity\": 12500\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/locations/{{locationId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "locations",
+                "{{locationId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 · Torneos (HU-GC-01)",
+      "item": [
+        {
+          "name": "Crear torneo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('tournamentId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Copa {{runId}}\",\n  \"sportId\": {{sportId}},\n  \"startDate\": \"{{tournamentStart}}\",\n  \"endDate\": \"{{tournamentEnd}}\",\n  \"registrationOpensAt\": \"{{registrationOpensAt}}\",\n  \"registrationClosesAt\": \"{{registrationClosesAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/tournaments",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournaments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar torneos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/tournaments?sportId={{sportId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournaments"
+              ],
+              "query": [
+                {
+                  "key": "sportId",
+                  "value": "{{sportId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver torneo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/tournaments/{{tournamentId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{tournamentId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Abrir inscripciones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"REGISTRATION_OPEN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/tournaments/{{tournamentId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{tournamentId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "14 · Escenario-Torneo",
+      "item": [
+        {
+          "name": "Habilitar escenario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('tournamentVenueId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tournamentId\": {{tournamentId}},\n  \"venueId\": {{venueId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/tournament-venues",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournament-venues"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Escenario ya habilitado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tournamentId\": {{tournamentId}},\n  \"venueId\": {{venueId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/tournament-venues",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournament-venues"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Escenarios del torneo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/tournament-venues?tournamentId={{tournamentId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournament-venues"
+              ],
+              "query": [
+                {
+                  "key": "tournamentId",
+                  "value": "{{tournamentId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver asociación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/tournament-venues/{{tournamentVenueId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournament-venues",
+                "{{tournamentVenueId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "15 · Inscripciones (HU-GC-08)",
+      "item": [
+        {
+          "name": "Inscribir equipos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('registrationId', pm.response.json().registrations[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tournamentId\": {{tournamentId}},\n  \"teamIds\": [\n    {{teamId}},\n    {{team2Id}}\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/registrations",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "registrations"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Inscripciones del torneo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/registrations?tournamentId={{tournamentId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "registrations"
+              ],
+              "query": [
+                {
+                  "key": "tournamentId",
+                  "value": "{{tournamentId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver inscripción",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/registrations/{{registrationId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "{{registrationId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "16 · Fases de grupos (HU-GC-03, 04)",
+      "item": [
+        {
+          "name": "Crear grupo A",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('groupPhaseId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tournamentId\": {{tournamentId}},\n  \"name\": \"Fase de grupos\",\n  \"order\": 1,\n  \"groupName\": \"A\",\n  \"qualifiersCount\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/group-phases",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "group-phases"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Grupos del torneo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/group-phases?tournamentId={{tournamentId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "group-phases"
+              ],
+              "query": [
+                {
+                  "key": "tournamentId",
+                  "value": "{{tournamentId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver grupo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/group-phases/{{groupPhaseId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "group-phases",
+                "{{groupPhaseId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar grupo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"qualifiersCount\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/group-phases/{{groupPhaseId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "group-phases",
+                "{{groupPhaseId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Agregar equipo al grupo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamId\": {{teamId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/group-phases/{{groupPhaseId}}/teams",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "group-phases",
+                "{{groupPhaseId}}",
+                "teams"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Equipos del grupo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/group-phases/{{groupPhaseId}}/teams",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "group-phases",
+                "{{groupPhaseId}}",
+                "teams"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Quitar equipo del grupo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/group-phases/{{groupPhaseId}}/teams/{{teamId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "group-phases",
+                "{{groupPhaseId}}",
+                "teams",
+                "{{teamId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "17 · Fases finales (HU-GC-05)",
+      "item": [
+        {
+          "name": "Crear final",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('finalPhaseId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tournamentId\": {{tournamentId}},\n  \"name\": \"Final\",\n  \"order\": 2,\n  \"round\": \"FINAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/final-phases",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "final-phases"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Fases finales del torneo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/final-phases?tournamentId={{tournamentId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "final-phases"
+              ],
+              "query": [
+                {
+                  "key": "tournamentId",
+                  "value": "{{tournamentId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver final",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/final-phases/{{finalPhaseId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "final-phases",
+                "{{finalPhaseId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar final",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Gran final\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/final-phases/{{finalPhaseId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "final-phases",
+                "{{finalPhaseId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "18 · Borrado con información asociada (409) y limpieza",
+      "description": "Primero comprueba que no se borra nada con información asociada (409, sin cascada). Luego retira lo que se puede. Equipos, jugadores, contratos, inscripciones y el torneo (cancelado) quedan: son historial y no tienen DELETE.",
+      "item": [
+        {
+          "name": "[409] Eliminar equipo con información asociada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/teams/{{teamId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams",
+                "{{teamId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Eliminar jugador con contratos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/players/{{playerId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "players",
+                "{{playerId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Eliminar habilidad asignada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test('Mensaje: está asignada a', () => pm.expect(JSON.stringify(pm.response.json())).to.include('está asignada a'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/skills/{{skillId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "skills",
+                "{{skillId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Eliminar deporte con equipos y torneos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/sports/{{sportId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "sports",
+                "{{sportId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Retirar habilidad del jugador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/player-skills/{{playerSkillId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "player-skills",
+                "{{playerSkillId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar habilidad",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/skills/{{skillId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "skills",
+                "{{skillId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Quitar relación entre equipos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/teams/{{teamId}}/related-teams/{{team2Id}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams",
+                "{{teamId}}",
+                "related-teams",
+                "{{team2Id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar final",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/final-phases/{{finalPhaseId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "final-phases",
+                "{{finalPhaseId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar grupo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/group-phases/{{groupPhaseId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "group-phases",
+                "{{groupPhaseId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Retirar inscripción",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/registrations/{{registrationId}}/withdraw",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "registrations",
+                "{{registrationId}}",
+                "withdraw"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Retirar escenario del torneo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/tournament-venues/{{tournamentVenueId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournament-venues",
+                "{{tournamentVenueId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancelar torneo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CANCELLED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/tournaments/{{tournamentId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{tournamentId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar localidad",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/locations/{{locationId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "locations",
+                "{{locationId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar espacio interno",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/venues/{{childVenueId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "venues",
+                "{{childVenueId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar escenario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/venues/{{venueId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "venues",
+                "{{venueId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar pelota",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/balls/{{ballId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "balls",
+                "{{ballId}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
