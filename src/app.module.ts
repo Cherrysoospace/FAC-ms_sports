@@ -19,6 +19,7 @@ import { TeamPlayersModule } from './team-players/team-players.module';
 import { PlayerSkillsModule } from './player-skills/player-skills.module';
 import { TeamRelationsModule } from './team-relations/team-relations.module';
 import { PlayerProfilesModule } from './player-profiles/player-profiles.module';
+import { SecurityModule } from './security/security.module';
 
 @Module({
   imports: [
@@ -53,6 +54,8 @@ import { PlayerProfilesModule } from './player-profiles/player-profiles.module';
     PlayerSkillsModule,
     TeamRelationsModule,
     PlayerProfilesModule,
+    // Guard global: todas las rutas pasan por ms_security salvo las @Public()
+    SecurityModule,
   ],
   controllers: [AppController],
   providers: [AppService],

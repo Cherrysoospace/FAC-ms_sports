@@ -16,11 +16,15 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  it('/health (GET) es pública', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/health')
       .expect(200)
-      .expect('Hello World!');
+      .expect({ status: 'ok', service: 'ms-sports' });
+  });
+
+  it('las demás rutas exigen token (401)', () => {
+    return request(app.getHttpServer()).get('/teams').expect(401);
   });
 
   afterEach(async () => {

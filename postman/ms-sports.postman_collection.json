@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "FAC · ms-sports (Gestión deportiva)",
-    "description": "Colección del microservicio ms-sports (NestJS, prefijo /gestion-deportiva).\n\nCómo usarla:\n1. Levantar MySQL, ms_security (puerto 8181) y ms-sports (puerto 3001).\n2. Ajustar las variables de la colección si cambian puertos o credenciales.\n3. Correr la colección completa en orden (Collection Runner o `npx newman run`): el login guarda el token y cada POST guarda el id que usan las siguientes peticiones. Cada corrida usa un runId para no chocar con datos anteriores.\n\nCada petición verifica su código de estado; las marcadas [400]/[404]/[409] prueban las validaciones y reglas de negocio.\nToda la colección usa Bearer {{token}}: queda lista para cuando ms-sports valide permisos con el SecurityGuard.",
+    "description": "Colección del microservicio ms-sports (NestJS, prefijo /gestion-deportiva).\n\nCómo usarla:\n1. Levantar MySQL, ms_security (puerto 8181) y ms-sports (puerto 3001).\n2. Ajustar las variables de la colección si cambian puertos o credenciales.\n3. Correr la colección completa en orden (Collection Runner o `npx newman run`): el login guarda el token y cada POST guarda el id que usan las siguientes peticiones. Cada corrida usa un runId para no chocar con datos anteriores.\n\nCada petición verifica su código de estado; las marcadas [400]/[404]/[409] prueban las validaciones y reglas de negocio.\nToda la colección usa Bearer {{token}} (administrador). La carpeta Seguridad prueba 401 y 403 con un aficionado de prueba que se registra solo.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -33,6 +33,18 @@
     },
     {
       "key": "token",
+      "value": ""
+    },
+    {
+      "key": "fanEmail",
+      "value": "aficionado.postman@uc.edu.co"
+    },
+    {
+      "key": "fanPassword",
+      "value": "Aficionado123!"
+    },
+    {
+      "key": "fanToken",
       "value": ""
     },
     {
@@ -192,6 +204,105 @@
           }
         },
         {
+          "name": "Registrar aficionado de prueba",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Creado o ya existía', () => pm.expect([201, 409]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Aficionado Postman\",\n  \"email\": \"{{fanEmail}}\",\n  \"password\": \"{{fanPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{securityUrl}}/api/auth/register",
+              "host": [
+                "{{securityUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login aficionado (rol AFICIONADO por defecto)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('fanToken', pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{fanEmail}}\",\n  \"password\": \"{{fanPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{securityUrl}}/api/auth/login",
+              "host": [
+                "{{securityUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "00 · Seguridad (SecurityGuard)",
+      "description": "Solo GET /health es público. Sin token o con token inválido → 401; sin permiso → 403. El 503 se prueba apagando ms_security y repitiendo cualquier petición (no se puede automatizar aquí).",
+      "item": [
+        {
           "name": "Health (público)",
           "event": [
             {
@@ -211,11 +322,205 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{sportsUrl}}/",
+              "raw": "{{sportsUrl}}/health",
               "host": [
                 "{{sportsUrl}}"
               ],
-              "path": []
+              "path": [
+                "health"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[401] Sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/teams",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[401] Token inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "token.invalido.x",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/teams",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Aficionado consulta equipos (lectura permitida)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/teams",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[403] Aficionado intenta crear un equipo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"No permitido\",\n  \"city\": \"X\",\n  \"modality\": \"MALE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/teams",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "teams"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[403] Aficionado consulta plantillas (ruta de administración)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/team-players",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-players"
+              ]
             }
           }
         }
