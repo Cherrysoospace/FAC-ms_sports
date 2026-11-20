@@ -8,6 +8,8 @@ import { Registration } from '../../registrations/entities/registration.entity';
 import { RegistrationStatus } from '../../registrations/enums/registration-status.enum';
 import { Match } from '../../matches/entities/match.entity';
 import { TeamPlayer } from '../../team-players/entities/team-player.entity';
+import { ContractStage } from '../../team-players/enums/contract-stage.enum';
+import { contractStageCondition } from '../../team-players/repositories/contract-stage.sql';
 import { TournamentStatusPolicy } from '../../tournaments/policies/tournament-status.policy';
 import { TeamQueryDto } from '../dto/team-query.dto';
 import { TeamSportSummaryDto } from '../dto/team-response.dto';
@@ -168,6 +170,23 @@ export class TeamsRepository {
     return this.matchRepository.count({
       where: [{ homeTeam: { id: teamId } }, { awayTeam: { id: teamId } }],
     });
+  }
+
+  // Jugadores con contrato vigente hoy, por equipo, en una sola consulta.
+  async countCurrentPlayersByTeamIds(
+    ids: number[],
+  ): Promise<Map<number, number>> {
+    if (ids.length === 0) return new Map();
+    const current = contractStageCondition('teamPlayer', ContractStage.CURRENT);
+    const rows = await this.teamPlayerRepository
+      .createQueryBuilder('teamPlayer')
+      .select('teamPlayer.team_id', 'id')
+      .addSelect('COUNT(*)', 'total')
+      .where('teamPlayer.team_id IN (:...ids)', { ids })
+      .andWhere(current.sql, current.params)
+      .groupBy('teamPlayer.team_id')
+      .getRawMany<CountRow>();
+    return toCountMap(rows);
   }
 
   // Todos los contratos (también el historial de traspasos).

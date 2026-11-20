@@ -28,9 +28,10 @@ export class TeamsService {
   async findAll(query: TeamQueryDto): Promise<TeamResponseDto[]> {
     const teams = await this.teamsRepository.findByFilters(query);
     const ids = teams.map((t) => t.id);
-    const [sports, registrations] = await Promise.all([
+    const [sports, registrations, players] = await Promise.all([
       this.teamsRepository.sportsByTeamIds(ids),
       this.teamsRepository.countActiveRegistrationsByTeamIds(ids),
+      this.teamsRepository.countCurrentPlayersByTeamIds(ids),
     ]);
     const extras = new Map(
       ids.map((id) => [
@@ -38,6 +39,7 @@ export class TeamsService {
         {
           sports: sports.get(id) ?? [],
           activeRegistrationsCount: registrations.get(id) ?? 0,
+          playersCount: players.get(id) ?? 0,
         },
       ]),
     );
@@ -46,13 +48,15 @@ export class TeamsService {
 
   async findOne(id: number): Promise<TeamResponseDto> {
     const team = await this.getTeamOrFail(id);
-    const [sports, activeRegistrationsCount] = await Promise.all([
+    const [sports, activeRegistrationsCount, players] = await Promise.all([
       this.teamsRepository.sportsByTeamIds([id]),
       this.teamsRepository.countActiveRegistrations(id),
+      this.teamsRepository.countCurrentPlayersByTeamIds([id]),
     ]);
     return TeamMapper.toResponseDto(team, {
       sports: sports.get(id) ?? [],
       activeRegistrationsCount,
+      playersCount: players.get(id) ?? 0,
     });
   }
 

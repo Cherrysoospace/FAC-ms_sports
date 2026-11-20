@@ -23,4 +23,6 @@ export class TeamResponseDto {
   group!: TeamGroupDto | null;
   // Inscripciones en estado ACTIVE
   activeRegistrationsCount!: number;
+  // Jugadores con contrato vigente hoy
+  playersCount!: number;
 }

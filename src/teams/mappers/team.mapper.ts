@@ -18,6 +18,8 @@ export const TEAM_MODALITY_LABELS: Record<TeamModality, string> = {
 export interface TeamExtras {
   sports: TeamSportSummaryDto[];
   activeRegistrationsCount: number;
+  // Contratos vigentes hoy (team_players, ContractStage.CURRENT)
+  playersCount: number;
 }
 
 export class TeamMapper {
@@ -48,6 +50,7 @@ export class TeamMapper {
     dto.active = entity.active;
     dto.sports = extras.sports;
     dto.activeRegistrationsCount = extras.activeRegistrationsCount;
+    dto.playersCount = extras.playersCount;
 
     if (entity.group) {
       const group = new TeamGroupDto();
@@ -61,7 +64,7 @@ export class TeamMapper {
     return dto;
   }
 
-  // `extrasById` trae los datos de cada equipo; si falta, sin deportes y 0.
+  // `extrasById` trae los datos de cada equipo; si falta, sin deportes y en 0.
   static toResponseDtoList(
     entities: Team[],
     extrasById: Map<number, TeamExtras>,
@@ -69,7 +72,11 @@ export class TeamMapper {
     return entities.map((e) =>
       TeamMapper.toResponseDto(
         e,
-        extrasById.get(e.id) ?? { sports: [], activeRegistrationsCount: 0 },
+        extrasById.get(e.id) ?? {
+          sports: [],
+          activeRegistrationsCount: 0,
+          playersCount: 0,
+        },
       ),
     );
   }
