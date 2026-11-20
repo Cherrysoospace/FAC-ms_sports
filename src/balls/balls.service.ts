@@ -10,7 +10,9 @@ import { UpdateBallDto } from './dto/update-ball.dto';
 import { BallQueryDto } from './dto/ball-query.dto';
 import { BallResponseDto } from './dto/ball-response.dto';
 import {
+  ApplicationException,
   BusinessRuleException,
+  ErrorCase,
   ResourceNotFoundException,
 } from '../common/exceptions';
 
@@ -73,6 +75,28 @@ export class BallsService {
 
     await this.ballRepository.remove(ball);
     return { message: `Pelota #${id} eliminada correctamente` };
+  }
+
+  /**
+   * Lo usa Partido: la pelota debe existir (404), estar activa y no estar
+   * asignada a otro partido (Partido 1 — 1 Pelota). `matchId` = el partido que
+   * se está editando, que puede conservar su propia pelota.
+   */
+  async getAvailableBallOrFail(id: number, matchId?: number): Promise<Ball> {
+    const ball = await this.getBallOrFail(id);
+    const label = `${ball.brand} ${ball.model}`;
+    if (!ball.active) {
+      throw new ApplicationException(
+        ErrorCase.INVALID_OPERATION,
+        `La pelota ${label} está inactiva`,
+      );
+    }
+    if (ball.match && ball.match.id !== matchId) {
+      throw new BusinessRuleException(
+        `La pelota ${label} ya está asignada al partido #${ball.match.id}`,
+      );
+    }
+    return ball;
   }
 
   private async getBallOrFail(id: number): Promise<Ball> {

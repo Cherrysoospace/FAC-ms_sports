@@ -1,5 +1,12 @@
-import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Match } from '../../matches/entities/match.entity';
+import { MatchPosition } from '../../match-positions/entities/match-position.entity';
 
 @Entity('balls')
 export class Ball {
@@ -21,4 +28,10 @@ export class Ball {
   // Partido 1 — 1 Pelota (diagrama). El lado dueño (ball_id) está en matches.
   @OneToOne(() => Match, (match) => match.ball)
   match?: Match | null;
+
+  // Pelota 1 — n Posición espacial (diagrama)
+  @OneToMany(() => MatchPosition, (position) => position.ball, {
+    cascade: false,
+  })
+  positions?: MatchPosition[];
 }

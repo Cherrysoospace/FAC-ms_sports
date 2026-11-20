@@ -8,6 +8,7 @@ import {
 import { DominantFoot } from '../enums/dominant-foot.enum';
 import { TeamPlayer } from '../../team-players/entities/team-player.entity';
 import { PlayerSkill } from '../../player-skills/entities/player-skill.entity';
+import { MatchPosition } from '../../match-positions/entities/match-position.entity';
 
 @Entity('players')
 @Unique('UQ_players_document_number', ['documentNumber'])
@@ -59,4 +60,10 @@ export class Player {
     cascade: false,
   })
   playerSkills?: PlayerSkill[];
+
+  // Jugador 1 — n Posición espacial (diagrama)
+  @OneToMany(() => MatchPosition, (position) => position.player, {
+    cascade: false,
+  })
+  positions?: MatchPosition[];
 }

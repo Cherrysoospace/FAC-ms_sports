@@ -20,6 +20,8 @@ import { PlayerSkillsModule } from './player-skills/player-skills.module';
 import { TeamRelationsModule } from './team-relations/team-relations.module';
 import { PlayerProfilesModule } from './player-profiles/player-profiles.module';
 import { SecurityModule } from './security/security.module';
+import { MatchesModule } from './matches/matches.module';
+import { MatchPositionsModule } from './match-positions/match-positions.module';
 
 @Module({
   imports: [
@@ -54,6 +56,8 @@ import { SecurityModule } from './security/security.module';
     PlayerSkillsModule,
     TeamRelationsModule,
     PlayerProfilesModule,
+    MatchesModule,
+    MatchPositionsModule,
     // Guard global: todas las rutas pasan por ms_security salvo las @Public()
     SecurityModule,
   ],
