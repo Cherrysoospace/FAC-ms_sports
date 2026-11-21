@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { FanTeam } from './fan-team.entity';
 import { FanPaymentMethod } from '../../payment-methods/entities/fan-payment-method.entity';
+import { Ticket } from '../../tickets/entities/ticket.entity';
 
 /**
  * Aficionado del diagrama de clases. Se vincula uno a uno con el usuario
@@ -49,4 +50,8 @@ export class Fan {
   // Aficionado n — n Método de pago (clase intermedia MétodoPago-Aficionado, R25)
   @OneToMany(() => FanPaymentMethod, (fpm) => fpm.fan, { cascade: false })
   paymentMethods?: FanPaymentMethod[];
+
+  // Partido n — n Aficionado mediante Boleto (diagrama, R16)
+  @OneToMany(() => Ticket, (ticket) => ticket.fan, { cascade: false })
+  tickets?: Ticket[];
 }
