@@ -9,3 +9,4 @@ export class FanResponseDto {
   createdAt!: Date;
   favoriteTeamsCount!: number;
 }
+

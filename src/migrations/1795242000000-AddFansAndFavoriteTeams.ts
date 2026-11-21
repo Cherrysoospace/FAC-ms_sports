@@ -42,3 +42,4 @@ export class AddFansAndFavoriteTeams1795242000000 implements MigrationInterface 
     await queryRunner.query(`DROP TABLE \`fans\``);
   }
 }
+

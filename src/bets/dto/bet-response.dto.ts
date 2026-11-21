@@ -48,3 +48,4 @@ export class BetResponseDto {
   fan!: BetFanSummaryDto;
   paymentMethod!: BetPaymentMethodSummaryDto;
 }
+

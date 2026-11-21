@@ -5,3 +5,4 @@ export enum BetStatus {
   VOID = 'VOID',
   CANCELLED = 'CANCELLED',
 }
+

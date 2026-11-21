@@ -48,3 +48,4 @@ export class AddTickets1795244000000 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE \`tickets\``);
   }
 }
+

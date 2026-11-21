@@ -18,3 +18,4 @@ export class PaymentMethodQueryDto {
   @IsString({ message: 'El texto de búsqueda debe ser texto' })
   search?: string;
 }
+

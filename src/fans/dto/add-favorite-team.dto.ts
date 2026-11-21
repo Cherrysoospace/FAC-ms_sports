@@ -8,3 +8,4 @@ export class AddFavoriteTeamDto {
   @IsInt({ message: 'El equipo es obligatorio y debe ser un número entero' })
   teamId!: number;
 }
+

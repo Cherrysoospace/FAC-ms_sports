@@ -69,3 +69,4 @@ export class TicketRulesPolicy {
     return `TKT-M${matchId}-L${locationId}-${suffix}`;
   }
 }
+

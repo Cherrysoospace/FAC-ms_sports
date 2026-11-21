@@ -45,3 +45,4 @@ export class BetsController {
     return this.betsService.voidBet(id, dto);
   }
 }
+

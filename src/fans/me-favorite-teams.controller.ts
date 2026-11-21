@@ -38,3 +38,4 @@ export class MeFavoriteTeamsController {
     return this.favoriteTeamsService.removeFavorite(user, teamId);
   }
 }
+

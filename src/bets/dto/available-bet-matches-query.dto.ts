@@ -27,3 +27,4 @@ export class AvailableBetMatchesQueryDto {
   @Min(1, { message: 'El identificador del escenario no es válido' })
   venueId?: number;
 }
+

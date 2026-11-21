@@ -36,3 +36,4 @@ export class BankTransferPaymentMethodValidator implements IPaymentMethodValidat
     requireText(details, 'accountHolder', 3, 'titular de la cuenta');
   }
 }
+

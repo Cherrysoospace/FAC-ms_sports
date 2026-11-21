@@ -97,3 +97,4 @@ export class BetMapper extends BaseMapper<Bet, BetResponseDto> {
     return dto;
   }
 }
+

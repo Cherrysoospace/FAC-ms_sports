@@ -64,3 +64,4 @@ export class MePaymentMethodsController {
     return this.fanPaymentMethodsService.removeMine(user, id);
   }
 }
+

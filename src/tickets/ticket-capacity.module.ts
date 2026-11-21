@@ -20,3 +20,4 @@ import { TicketsRepository } from './repositories/tickets.repository';
   exports: [TicketsRepository, TICKET_CAPACITY_PORT],
 })
 export class TicketCapacityModule {}
+

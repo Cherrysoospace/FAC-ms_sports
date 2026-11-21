@@ -40,3 +40,4 @@ export class FanTeam {
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt!: Date;
 }
+

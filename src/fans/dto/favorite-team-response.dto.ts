@@ -13,3 +13,4 @@ export class FavoriteTeamResponseDto {
   createdAt!: Date;
   team!: FavoriteTeamSummaryDto;
 }
+

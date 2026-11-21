@@ -8,3 +8,4 @@ export class TicketAvailabilityQueryDto {
   @IsInt({ message: 'El partido es obligatorio y debe ser un número entero' })
   matchId!: number;
 }
+

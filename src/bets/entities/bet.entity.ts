@@ -111,3 +111,4 @@ export class Bet {
   @JoinColumn({ name: 'fan_payment_method_id' })
   fanPaymentMethod!: FanPaymentMethod;
 }
+

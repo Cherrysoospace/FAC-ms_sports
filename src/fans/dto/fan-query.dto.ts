@@ -13,3 +13,4 @@ export class FanQueryDto {
   @IsBoolean({ message: 'active debe ser true o false' })
   active?: boolean;
 }
+

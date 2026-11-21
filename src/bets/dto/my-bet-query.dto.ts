@@ -21,3 +21,4 @@ export class MyBetQueryDto {
   @Min(1, { message: 'El identificador del torneo no es válido' })
   tournamentId?: number;
 }
+

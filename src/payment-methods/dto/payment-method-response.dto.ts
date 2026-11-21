@@ -8,3 +8,4 @@ export class PaymentMethodResponseDto {
   active!: boolean;
   fanPaymentMethodsCount!: number;
 }
+

@@ -21,3 +21,4 @@ export class MatchTicketAvailabilityResponseDto {
   totalAvailable!: number;
   locations!: LocationAvailabilityDto[];
 }
+

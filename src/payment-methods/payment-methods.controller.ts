@@ -47,3 +47,4 @@ export class PaymentMethodsController {
     return this.paymentMethodsService.remove(id);
   }
 }
+

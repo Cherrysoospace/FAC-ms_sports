@@ -3,3 +3,4 @@ export enum BetSelection {
   DRAW = 'DRAW',
   AWAY_WIN = 'AWAY_WIN',
 }
+

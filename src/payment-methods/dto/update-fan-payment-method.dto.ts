@@ -32,3 +32,4 @@ export class UpdateFanPaymentMethodDto {
   @IsBoolean({ message: 'active debe ser true o false' })
   active?: boolean;
 }
+

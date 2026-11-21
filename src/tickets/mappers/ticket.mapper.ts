@@ -112,3 +112,4 @@ export class TicketMapper extends BaseMapper<Ticket, TicketResponseDto> {
     return dto;
   }
 }
+

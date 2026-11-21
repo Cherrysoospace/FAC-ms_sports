@@ -17,3 +17,4 @@ export class FanPaymentMethodResponseDto {
   fanId!: number;
   paymentMethod!: FanPaymentMethodCatalogDto;
 }
+

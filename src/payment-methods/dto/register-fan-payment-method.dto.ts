@@ -35,3 +35,4 @@ export class RegisterFanPaymentMethodDto {
   @IsObject({ message: 'Los detalles del método de pago son obligatorios' })
   details!: Record<string, unknown>;
 }
+

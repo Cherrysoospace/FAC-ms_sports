@@ -89,3 +89,4 @@ export class PaymentMethodsRepository {
     return toCountMap(rows);
   }
 }
+

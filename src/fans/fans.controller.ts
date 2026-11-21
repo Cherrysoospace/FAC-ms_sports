@@ -44,3 +44,4 @@ export class FansController {
     return this.fansService.remove(id);
   }
 }
+

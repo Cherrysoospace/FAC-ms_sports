@@ -25,3 +25,4 @@ import { TicketsService } from './tickets.service';
   exports: [TicketsService, TicketCapacityModule],
 })
 export class TicketsModule {}
+

@@ -31,3 +31,4 @@ export class UpdateMyBetDto {
   )
   amount?: number;
 }
+

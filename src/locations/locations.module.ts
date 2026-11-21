@@ -17,4 +17,4 @@ import { LocationsRepository } from './repositories/locations.repository';
   providers: [LocationsService, LocationsRepository],
   exports: [LocationsService, LocationsRepository],
 })
-export class LocationsModule {}
+export class LocationsModule { }

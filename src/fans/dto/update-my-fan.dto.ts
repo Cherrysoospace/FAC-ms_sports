@@ -41,3 +41,4 @@ export class UpdateMyFanDto {
   @IsString({ message: 'El teléfono debe ser texto' })
   phone?: string | null;
 }
+

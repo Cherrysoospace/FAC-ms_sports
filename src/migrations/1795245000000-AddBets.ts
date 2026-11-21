@@ -61,3 +61,4 @@ export class AddBets1795245000000 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE \`bets\``);
   }
 }
+

@@ -33,3 +33,4 @@ export class DigitalWalletPaymentMethodValidator implements IPaymentMethodValida
     requireText(details, 'accountHolder', 3, 'titular de la cuenta');
   }
 }
+

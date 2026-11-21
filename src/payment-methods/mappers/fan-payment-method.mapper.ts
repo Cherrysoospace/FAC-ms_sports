@@ -60,3 +60,4 @@ export class FanPaymentMethodMapper extends BaseMapper<
     return entity;
   }
 }
+

@@ -34,3 +34,4 @@ export class TicketQueryDto {
   @IsString({ message: 'El código debe ser texto' })
   code?: string;
 }
+

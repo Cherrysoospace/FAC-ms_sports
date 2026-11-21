@@ -29,3 +29,4 @@ export class CreatePaymentMethodDto {
   @IsString({ message: 'La descripción debe ser texto' })
   description?: string | null;
 }
+

@@ -30,3 +30,4 @@ import { BetsRepository } from './repositories/bets.repository';
   ],
 })
 export class BetSettlementModule {}
+

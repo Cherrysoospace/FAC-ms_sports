@@ -31,3 +31,4 @@ export class MeFanController {
     return this.fansService.updateMyProfile(user, dto);
   }
 }
+

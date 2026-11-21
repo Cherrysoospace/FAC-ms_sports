@@ -39,7 +39,7 @@ export class TicketsService {
     private readonly locationsRepository: LocationsRepository,
     private readonly fansService: FansService,
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async getAvailability(
     query: TicketAvailabilityQueryDto,

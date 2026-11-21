@@ -39,3 +39,4 @@ export class RegisterMyFanDto {
   @IsString({ message: 'El teléfono debe ser texto' })
   phone?: string | null;
 }
+

@@ -32,3 +32,4 @@ export class TicketResponseDto {
   location!: TicketLocationSummaryDto;
   fan!: TicketFanSummaryDto;
 }
+

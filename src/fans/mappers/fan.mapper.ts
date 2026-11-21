@@ -64,3 +64,4 @@ export class FanMapper extends BaseMapper<Fan, FanResponseDto> {
     return fan;
   }
 }
+

@@ -9,3 +9,4 @@ export class CancelBetDto {
   @IsString({ message: 'El motivo debe ser texto' })
   reason?: string;
 }
+

@@ -41,3 +41,4 @@ export class AddPaymentMethods1795243000000 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE \`payment_methods\``);
   }
 }
+

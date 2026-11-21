@@ -68,3 +68,4 @@ export class Ticket {
   @JoinColumn({ name: 'location_id' })
   location!: Location;
 }
+

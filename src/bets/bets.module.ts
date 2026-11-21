@@ -24,3 +24,4 @@ import { MeBetsController } from './me-bets.controller';
   exports: [BetsService, BetSettlementModule],
 })
 export class BetsModule {}
+

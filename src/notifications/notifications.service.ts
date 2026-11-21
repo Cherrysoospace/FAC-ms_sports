@@ -23,8 +23,8 @@ export class NotificationsService {
   async notify(notification: Notification): Promise<number> {
     const recipients = [
       ...new Set(
-        notification.to
-          .map((email) => email.trim().toLowerCase())
+        (notification.to ?? [])
+          .map((email) => (email ?? '').trim().toLowerCase())
           .filter(Boolean),
       ),
     ];

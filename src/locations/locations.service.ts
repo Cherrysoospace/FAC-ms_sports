@@ -32,7 +32,7 @@ export class LocationsService {
     @Optional()
     @Inject(TICKET_CAPACITY_PORT)
     private readonly ticketCapacityPort?: ITicketCapacityPort,
-  ) {}
+  ) { }
 
   async findAll(query: LocationQueryDto): Promise<LocationResponseDto[]> {
     const locations = await this.locationsRepository.findByFilters(query);
@@ -86,8 +86,8 @@ export class LocationsService {
       if (dto.capacity < maxSold) {
         throw new BusinessRuleException(
           `No se puede reducir la capacidad de ${location.name} a ${dto.capacity} ` +
-            `porque ya tiene ${formatCount(maxSold, 'boleto vendido', 'boletos vendidos')} ` +
-            'en un mismo partido',
+          `porque ya tiene ${formatCount(maxSold, 'boleto vendido', 'boletos vendidos')} ` +
+          'en un mismo partido',
         );
       }
     }
@@ -105,7 +105,7 @@ export class LocationsService {
       if (soldTickets > 0) {
         throw new BusinessRuleException(
           `No se puede eliminar la localidad porque tiene ${formatCount(soldTickets, 'boleto vendido', 'boletos vendidos')} ` +
-            'asociados. Desactívela con PATCH { "active": false }',
+          'asociados. Desactívela con PATCH { "active": false }',
         );
       }
     }

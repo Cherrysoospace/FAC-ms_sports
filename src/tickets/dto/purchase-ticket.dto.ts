@@ -27,3 +27,4 @@ export class PurchaseTicketDto {
   )
   price?: number;
 }
+

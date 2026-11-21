@@ -47,3 +47,4 @@ export class CreateBetDto {
   )
   odds!: number;
 }
+

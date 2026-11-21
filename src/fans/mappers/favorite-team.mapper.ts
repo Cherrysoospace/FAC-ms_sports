@@ -26,3 +26,4 @@ export class FavoriteTeamMapper extends BaseMapper<
     return dto;
   }
 }
+
