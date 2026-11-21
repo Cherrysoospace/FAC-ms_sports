@@ -18,6 +18,7 @@ import { Registration } from '../../registrations/entities/registration.entity';
 // sin definir. Por eso la relación usa el nombre de la entidad como string.
 import type { GroupPhase } from '../../phases/entities/group-phase.entity';
 import { Match } from '../../matches/entities/match.entity';
+import { FanTeam } from '../../fans/entities/fan-team.entity';
 
 @Entity('teams')
 @Unique('UQ_teams_name_modality', ['name', 'modality'])
@@ -66,6 +67,10 @@ export class Team {
     cascade: false,
   })
   teamPlayers?: TeamPlayer[];
+
+  // Equipo n — n Aficionado (clase de asociación Aficionado-Equipo, R18)
+  @OneToMany(() => FanTeam, (fanTeam) => fanTeam.team, { cascade: false })
+  fanTeams?: FanTeam[];
 
   /**
    * Equipo n — n Equipo (autorrelación del diagrama, sin clase asociativa):
