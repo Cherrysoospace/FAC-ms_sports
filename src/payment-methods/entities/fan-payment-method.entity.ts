@@ -5,10 +5,12 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
 import { Fan } from '../../fans/entities/fan.entity';
+import { Bet } from '../../bets/entities/bet.entity';
 import { PaymentMethod } from './payment-method.entity';
 
 /**
@@ -57,4 +59,9 @@ export class FanPaymentMethod {
 
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt!: Date;
+
+  // MétodoPago-Aficionado 1 — n Apuesta (diagrama, R26)
+  @OneToMany(() => Bet, (bet) => bet.fanPaymentMethod, { cascade: false })
+  bets?: Bet[];
 }
+

@@ -14,6 +14,7 @@ import { Team } from '../../teams/entities/team.entity';
 import { Ball } from '../../balls/entities/ball.entity';
 import { Goal } from '../../goals/entities/goal.entity';
 import { Ticket } from '../../tickets/entities/ticket.entity';
+import { Bet } from '../../bets/entities/bet.entity';
 import { MatchStatus } from '../enums/match-status.enum';
 
 @Entity('matches')
@@ -91,4 +92,8 @@ export class Match {
   // Partido n — n Aficionado mediante Boleto (diagrama, R16)
   @OneToMany(() => Ticket, (ticket) => ticket.match, { cascade: false })
   tickets?: Ticket[];
+
+  // Partido n — n Aficionado mediante Apuesta (diagrama, R17)
+  @OneToMany(() => Bet, (bet) => bet.match, { cascade: false })
+  bets?: Bet[];
 }

@@ -9,6 +9,7 @@ import {
 import { FanTeam } from './fan-team.entity';
 import { FanPaymentMethod } from '../../payment-methods/entities/fan-payment-method.entity';
 import { Ticket } from '../../tickets/entities/ticket.entity';
+import { Bet } from '../../bets/entities/bet.entity';
 
 /**
  * Aficionado del diagrama de clases. Se vincula uno a uno con el usuario
@@ -54,4 +55,8 @@ export class Fan {
   // Partido n — n Aficionado mediante Boleto (diagrama, R16)
   @OneToMany(() => Ticket, (ticket) => ticket.fan, { cascade: false })
   tickets?: Ticket[];
+
+  // Partido n — n Aficionado mediante Apuesta (diagrama, R17)
+  @OneToMany(() => Bet, (bet) => bet.fan, { cascade: false })
+  bets?: Bet[];
 }
