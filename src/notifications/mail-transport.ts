@@ -7,7 +7,8 @@ export interface MailMessage {
 
 /**
  * Cómo sale un correo. NotificationsService depende de esta abstracción, no
- * de la implementación: MAIL_MODE=console (simulado) o MAIL_MODE=smtp (nodemailer).
+ * de la implementación: MAIL_MODE=console (simulado), MAIL_MODE=security
+ * (delegado a ms_security) o MAIL_MODE=smtp (nodemailer).
  */
 export abstract class MailTransport {
   abstract send(message: MailMessage): Promise<void>;
