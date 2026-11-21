@@ -4,6 +4,7 @@ import { Match } from './entities/match.entity';
 import { Phase } from '../phases/entities/phase.entity';
 import { Registration } from '../registrations/entities/registration.entity';
 import { MatchPosition } from '../match-positions/entities/match-position.entity';
+import { Goal } from '../goals/entities/goal.entity';
 import { TeamsModule } from '../teams/teams.module';
 import { VenuesModule } from '../venues/venues.module';
 import { BallsModule } from '../balls/balls.module';
@@ -16,7 +17,7 @@ import { MatchNotifier } from './match-notifier';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Match, Phase, Registration, MatchPosition]),
+    TypeOrmModule.forFeature([Match, Phase, Registration, MatchPosition, Goal]),
     TeamsModule,
     VenuesModule,
     BallsModule,
@@ -25,7 +26,7 @@ import { MatchNotifier } from './match-notifier';
   ],
   controllers: [MatchesController],
   providers: [MatchesService, MatchesRepository, MatchNotifier],
-  // Lo usan los módulos de Fercho (getMatchOrFail).
-  exports: [MatchesService],
+  // Lo usan los módulos de Fercho (getMatchOrFail y MatchNotifier).
+  exports: [MatchesService, MatchNotifier],
 })
 export class MatchesModule {}

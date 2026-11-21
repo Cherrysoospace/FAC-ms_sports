@@ -89,4 +89,36 @@ export class MatchRulesPolicy {
       );
     }
   }
+
+  // HU-GC-07: el resultado solo se registra o corrige si ya inició o finalizó.
+  static assertResultRecordable(status: MatchStatus): void {
+    if (status === MatchStatus.SCHEDULED) {
+      throw new ApplicationException(
+        ErrorCase.INVALID_OPERATION,
+        'El partido aún está programado: debe iniciarse antes de registrar su resultado final',
+      );
+    }
+    if (status === MatchStatus.CANCELLED) {
+      throw new ApplicationException(
+        ErrorCase.INVALID_OPERATION,
+        'No se puede registrar el resultado de un partido cancelado',
+      );
+    }
+  }
+
+  // HU-GC-07: las anotaciones solo aplican con el partido en curso o finalizado.
+  static assertAnnotationsAllowed(status: MatchStatus): void {
+    if (status === MatchStatus.SCHEDULED) {
+      throw new ApplicationException(
+        ErrorCase.INVALID_OPERATION,
+        'No se pueden gestionar anotaciones de un partido programado: inicie el partido primero',
+      );
+    }
+    if (status === MatchStatus.CANCELLED) {
+      throw new ApplicationException(
+        ErrorCase.INVALID_OPERATION,
+        'No se pueden gestionar anotaciones de un partido cancelado',
+      );
+    }
+  }
 }

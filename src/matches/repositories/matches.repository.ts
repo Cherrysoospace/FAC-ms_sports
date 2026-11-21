@@ -6,6 +6,7 @@ import { Phase } from '../../phases/entities/phase.entity';
 import { Registration } from '../../registrations/entities/registration.entity';
 import { RegistrationStatus } from '../../registrations/enums/registration-status.enum';
 import { MatchPosition } from '../../match-positions/entities/match-position.entity';
+import { Goal } from '../../goals/entities/goal.entity';
 import { MatchQueryDto } from '../dto/match-query.dto';
 
 // Consultas propias del módulo de partidos.
@@ -20,6 +21,8 @@ export class MatchesRepository {
     private readonly registrationRepository: Repository<Registration>,
     @InjectRepository(MatchPosition)
     private readonly positionRepository: Repository<MatchPosition>,
+    @InjectRepository(Goal)
+    private readonly goalRepository: Repository<Goal>,
   ) {}
 
   // Partido con todo lo que necesita MatchMapper.
@@ -77,6 +80,11 @@ export class MatchesRepository {
   // Registros de seguimiento espacial (HU-GC-09): bloquean la eliminación.
   countPositions(matchId: number): Promise<number> {
     return this.positionRepository.count({ where: { match: { id: matchId } } });
+  }
+
+  // Anotaciones del partido (HU-GC-07): bloquean la eliminación.
+  countGoals(matchId: number): Promise<number> {
+    return this.goalRepository.count({ where: { match: { id: matchId } } });
   }
 
   // "Habilitado para la competencia" = inscripción ACTIVE en el torneo.

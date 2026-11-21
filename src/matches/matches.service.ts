@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Match } from './entities/match.entity';
 import { MatchStatus } from './enums/match-status.enum';
 import { MatchesRepository } from './repositories/matches.repository';
@@ -14,6 +14,7 @@ import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 import { MatchQueryDto } from './dto/match-query.dto';
 import { MatchResponseDto } from './dto/match-response.dto';
+import { RecordMatchResultDto } from './dto/record-match-result.dto';
 import { Phase } from '../phases/entities/phase.entity';
 import { GroupPhase } from '../phases/entities/group-phase.entity';
 import { Team } from '../teams/entities/team.entity';
@@ -23,6 +24,11 @@ import { VenuesService } from '../venues/venues.service';
 import { BallsService } from '../balls/balls.service';
 import { TournamentVenuesService } from '../tournament-venues/tournament-venues.service';
 import { TournamentStatusPolicy } from '../tournaments/policies/tournament-status.policy';
+import {
+  BET_SETTLEMENT_PORT,
+  type IBetSettlementPort,
+} from '../common/contracts';
+import { joinList, plural } from '../common/text/spanish-list';
 import {
   ApplicationException,
   BusinessRuleException,
@@ -50,6 +56,10 @@ export class MatchesService {
     private readonly ballsService: BallsService,
     private readonly tournamentVenuesService: TournamentVenuesService,
     private readonly matchNotifier: MatchNotifier,
+    private readonly dataSource: DataSource,
+    @Optional()
+    @Inject(BET_SETTLEMENT_PORT)
+    private readonly betSettlementPort?: IBetSettlementPort,
   ) {}
 
   async findAll(query: MatchQueryDto): Promise<MatchResponseDto[]> {
@@ -131,18 +141,82 @@ export class MatchesService {
     return this.findOne(id);
   }
 
+  // HU-GC-07: única vía que registra resultado y pasa el partido a FINISHED.
+  async recordResult(
+    id: number,
+    dto: RecordMatchResultDto,
+  ): Promise<MatchResponseDto> {
+    const match = await this.getMatchOrFail(id);
+    MatchRulesPolicy.assertResultRecordable(match.status);
+
+    if (TournamentStatusPolicy.isClosed(match.phase.tournament.status)) {
+      throw new ApplicationException(
+        ErrorCase.INVALID_OPERATION,
+        `El torneo ${match.phase.tournament.name} ya terminó o fue cancelado: ` +
+          'no se puede registrar ni modificar el resultado',
+      );
+    }
+
+    const isFirstFinalization = await this.dataSource.transaction(
+      async (manager) => {
+        const locked = await manager.findOne(Match, {
+          where: { id },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (!locked) throw ResourceNotFoundException.of('Partido', id);
+
+        MatchRulesPolicy.assertResultRecordable(locked.status);
+        const firstFinalization = locked.status !== MatchStatus.FINISHED;
+
+        locked.homeScore = dto.homeScore;
+        locked.awayScore = dto.awayScore;
+        locked.status = MatchStatus.FINISHED;
+        locked.bettingOpen = false;
+        await manager.save(Match, locked);
+
+        if (firstFinalization && this.betSettlementPort) {
+          await this.betSettlementPort.settleForMatch(
+            {
+              matchId: match.id,
+              homeTeamId: match.homeTeam.id,
+              awayTeamId: match.awayTeam.id,
+              homeScore: dto.homeScore,
+              awayScore: dto.awayScore,
+            },
+            manager,
+          );
+        }
+
+        return firstFinalization;
+      },
+    );
+
+    const updated = await this.getMatchOrFail(id);
+    await this.matchNotifier.notifyMatchResult(updated, isFirstFinalization);
+    return MatchMapper.toResponseDto(updated);
+  }
+
   async remove(id: number): Promise<{ message: string }> {
     const match = await this.getMatchOrFail(id);
     MatchRulesPolicy.assertDeletable(match.status);
 
-    const positions = await this.matchesRepository.countPositions(id);
-    if (positions > 0) {
+    const [positions, goals] = await Promise.all([
+      this.matchesRepository.countPositions(id),
+      this.matchesRepository.countGoals(id),
+    ]);
+
+    const dependencies = [
+      positions > 0 ? 'seguimiento espacial' : null,
+      plural(goals, 'anotación', 'anotaciones'),
+    ].filter((dependency): dependency is string => dependency !== null);
+
+    if (dependencies.length > 0) {
       throw new BusinessRuleException(
-        'No se puede eliminar porque tiene seguimiento espacial registrado. ' +
+        `No se puede eliminar porque tiene ${joinList(dependencies)} registrados. ` +
           'Si no se va a jugar, cancélelo',
       );
     }
-    // TODO (Fercho): bloquear (409) también si tiene anotaciones, boletos o apuestas.
+    // TODO (Fercho): bloquear (409) también si tiene boletos o apuestas.
 
     await this.matchRepository.remove(match);
     return { message: `Partido #${id} eliminado correctamente` };

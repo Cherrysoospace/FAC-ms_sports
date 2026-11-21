@@ -70,4 +70,34 @@ describe('MatchRulesPolicy', () => {
       MatchRulesPolicy.assertDeletable(MatchStatus.FINISHED),
     ).toThrow('cancélelo');
   });
+
+  it('solo permite registrar resultado si el partido está en curso o finalizado', () => {
+    expect(() =>
+      MatchRulesPolicy.assertResultRecordable(MatchStatus.IN_PROGRESS),
+    ).not.toThrow();
+    expect(() =>
+      MatchRulesPolicy.assertResultRecordable(MatchStatus.FINISHED),
+    ).not.toThrow();
+    expect(() =>
+      MatchRulesPolicy.assertResultRecordable(MatchStatus.SCHEDULED),
+    ).toThrow('debe iniciarse');
+    expect(() =>
+      MatchRulesPolicy.assertResultRecordable(MatchStatus.CANCELLED),
+    ).toThrow('cancelado');
+  });
+
+  it('solo permite anotaciones cuando el partido está en curso o finalizado', () => {
+    expect(() =>
+      MatchRulesPolicy.assertAnnotationsAllowed(MatchStatus.IN_PROGRESS),
+    ).not.toThrow();
+    expect(() =>
+      MatchRulesPolicy.assertAnnotationsAllowed(MatchStatus.FINISHED),
+    ).not.toThrow();
+    expect(() =>
+      MatchRulesPolicy.assertAnnotationsAllowed(MatchStatus.SCHEDULED),
+    ).toThrow('inicie el partido primero');
+    expect(() =>
+      MatchRulesPolicy.assertAnnotationsAllowed(MatchStatus.CANCELLED),
+    ).toThrow('cancelado');
+  });
 });
