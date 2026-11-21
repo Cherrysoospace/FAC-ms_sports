@@ -7,6 +7,7 @@ import {
   Unique,
 } from 'typeorm';
 import { FanTeam } from './fan-team.entity';
+import { FanPaymentMethod } from '../../payment-methods/entities/fan-payment-method.entity';
 
 /**
  * Aficionado del diagrama de clases. Se vincula uno a uno con el usuario
@@ -44,4 +45,8 @@ export class Fan {
   // Aficionado n — n Equipo (clase de asociación Aficionado-Equipo, R18)
   @OneToMany(() => FanTeam, (fanTeam) => fanTeam.fan, { cascade: false })
   favoriteTeams?: FanTeam[];
+
+  // Aficionado n — n Método de pago (clase intermedia MétodoPago-Aficionado, R25)
+  @OneToMany(() => FanPaymentMethod, (fpm) => fpm.fan, { cascade: false })
+  paymentMethods?: FanPaymentMethod[];
 }
