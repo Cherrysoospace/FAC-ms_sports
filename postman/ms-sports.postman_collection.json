@@ -130,6 +130,102 @@
     {
       "key": "matchId",
       "value": ""
+    },
+    {
+      "key": "fanId",
+      "value": ""
+    },
+    {
+      "key": "fanDisposableId",
+      "value": ""
+    },
+    {
+      "key": "myFanId",
+      "value": ""
+    },
+    {
+      "key": "paymentMethodId",
+      "value": ""
+    },
+    {
+      "key": "paymentMethodDisposableId",
+      "value": ""
+    },
+    {
+      "key": "fanPaymentMethodId",
+      "value": ""
+    },
+    {
+      "key": "fanPaymentMethodDisposableId",
+      "value": ""
+    },
+    {
+      "key": "ferchoLocationId",
+      "value": ""
+    },
+    {
+      "key": "ferchoTournamentId",
+      "value": ""
+    },
+    {
+      "key": "ferchoPhaseId",
+      "value": ""
+    },
+    {
+      "key": "ferchoBallId",
+      "value": ""
+    },
+    {
+      "key": "ferchoMatchId",
+      "value": ""
+    },
+    {
+      "key": "ferchoBall2Id",
+      "value": ""
+    },
+    {
+      "key": "ferchoMatch2Id",
+      "value": ""
+    },
+    {
+      "key": "ferchoBall3Id",
+      "value": ""
+    },
+    {
+      "key": "ferchoMatch3Id",
+      "value": ""
+    },
+    {
+      "key": "ticketId",
+      "value": ""
+    },
+    {
+      "key": "myTicketId",
+      "value": ""
+    },
+    {
+      "key": "myTicket2Id",
+      "value": ""
+    },
+    {
+      "key": "betId",
+      "value": ""
+    },
+    {
+      "key": "myBetId",
+      "value": ""
+    },
+    {
+      "key": "myBetToCancelId",
+      "value": ""
+    },
+    {
+      "key": "goalId",
+      "value": ""
+    },
+    {
+      "key": "goalDisposableId",
+      "value": ""
     }
   ],
   "item": [
@@ -5286,6 +5382,3071 @@
               "path": [
                 "balls",
                 "{{ballId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "21 · Aficionados y equipos favoritos (Fercho)",
+      "description": "Gestión administrativa de aficionados (/fans), perfil propio (/me/fan) y equipos favoritos (/me/favorite-teams).",
+      "item": [
+        {
+          "name": "Autorregistrar mi perfil de aficionado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Creado o ya existía', () => pm.expect([201, 409]).to.include(pm.response.code));",
+                  "if (pm.response.code === 201) pm.collectionVariables.set('myFanId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Aficionado Postman\",\n  \"documentNumber\": \"10{{runId}}\",\n  \"email\": \"{{fanEmail}}\",\n  \"phone\": \"3001112233\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/me/fan",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "fan"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver mi perfil de aficionado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set('myFanId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/me/fan",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "fan"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar mi perfil de aficionado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"3009998877\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/me/fan",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "fan"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Agregar equipo favorito",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Agregado o ya era favorito', () => pm.expect([201, 409]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamId\": {{teamId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/me/favorite-teams",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "favorite-teams"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar mis equipos favoritos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/me/favorite-teams",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "favorite-teams"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Quitar equipo favorito",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/me/favorite-teams/{{teamId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "favorite-teams",
+                "{{teamId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear aficionado (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('fanId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"securityUserId\": 9{{runId}},\n  \"fullName\": \"Aficionado Admin {{runId}}\",\n  \"documentNumber\": \"90{{runId}}\",\n  \"email\": \"fan.admin.{{runId}}@uc.edu.co\",\n  \"phone\": \"3101234567\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/fans",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "fans"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Aficionado con documento duplicado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"securityUserId\": 8{{runId}},\n  \"fullName\": \"Aficionado Duplicado {{runId}}\",\n  \"documentNumber\": \"90{{runId}}\",\n  \"email\": \"fan.dup.{{runId}}@uc.edu.co\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/fans",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "fans"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear aficionado temporal para eliminar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('fanDisposableId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"securityUserId\": 7{{runId}},\n  \"fullName\": \"Aficionado Temporal {{runId}}\",\n  \"documentNumber\": \"70{{runId}}\",\n  \"email\": \"fan.tmp.{{runId}}@uc.edu.co\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/fans",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "fans"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar aficionados (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/fans?active=true",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "fans"
+              ],
+              "query": [
+                {
+                  "key": "active",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver aficionado (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/fans/{{fanId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "fans",
+                "{{fanId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar aficionado (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"3117654321\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/fans/{{fanId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "fans",
+                "{{fanId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar aficionado temporal (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/fans/{{fanDisposableId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "fans",
+                "{{fanDisposableId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "22 · Métodos de pago y billetera (HU-GC-10 · Fercho)",
+      "description": "Catálogo administrativo (/payment-methods) y billetera del aficionado (/me/payment-methods) con validación Strategy.",
+      "item": [
+        {
+          "name": "Crear método de pago (billetera digital)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('paymentMethodId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Billetera Fercho {{runId}}\",\n  \"type\": \"DIGITAL_WALLET\",\n  \"description\": \"Billetera digital para pruebas Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/payment-methods",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "payment-methods"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear método de pago temporal (PSE)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('paymentMethodDisposableId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"PSE Fercho {{runId}}\",\n  \"type\": \"PSE\",\n  \"description\": \"Método temporal para borrar\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/payment-methods",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "payment-methods"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar catálogo de métodos de pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/payment-methods?active=true",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "payment-methods"
+              ],
+              "query": [
+                {
+                  "key": "active",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver método de pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/payment-methods/{{paymentMethodId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "payment-methods",
+                "{{paymentMethodId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar método de pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Billetera digital habilitada {{runId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/payment-methods/{{paymentMethodId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "payment-methods",
+                "{{paymentMethodId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar método de pago temporal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/payment-methods/{{paymentMethodDisposableId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "payment-methods",
+                "{{paymentMethodDisposableId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[400] Registrar billetera con referencia inválida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethodId\": {{paymentMethodId}},\n  \"alias\": \"Billetera inválida\",\n  \"reference\": \"123\",\n  \"details\": {\n    \"provider\": \"Nequi\",\n    \"accountHolder\": \"Aficionado Postman\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/me/payment-methods",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "payment-methods"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar mi método de pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('fanPaymentMethodId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethodId\": {{paymentMethodId}},\n  \"alias\": \"Nequi Principal {{runId}}\",\n  \"reference\": \"3001{{runId}}\",\n  \"details\": {\n    \"provider\": \"Nequi\",\n    \"accountHolder\": \"Aficionado Postman\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/me/payment-methods",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "payment-methods"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar mi método de pago temporal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('fanPaymentMethodDisposableId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentMethodId\": {{paymentMethodId}},\n  \"alias\": \"Daviplata Temporal {{runId}}\",\n  \"reference\": \"3002{{runId}}\",\n  \"details\": {\n    \"provider\": \"Daviplata\",\n    \"accountHolder\": \"Aficionado Postman\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/me/payment-methods",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "payment-methods"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar mis métodos de pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/me/payment-methods?active=true",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "payment-methods"
+              ],
+              "query": [
+                {
+                  "key": "active",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver mi método de pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/me/payment-methods/{{fanPaymentMethodId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "payment-methods",
+                "{{fanPaymentMethodId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar mi método de pago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alias\": \"Nequi Actualizada {{runId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/me/payment-methods/{{fanPaymentMethodId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "payment-methods",
+                "{{fanPaymentMethodId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar mi método de pago temporal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/me/payment-methods/{{fanPaymentMethodDisposableId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "payment-methods",
+                "{{fanPaymentMethodDisposableId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "23 · Preparación de partidos (Fercho)",
+      "description": "Crea localidad, torneo abierto y 3 partidos programados usando el deporte, equipos, jugador y escenario ya creados en las carpetas anteriores.",
+      "item": [
+        {
+          "name": "Crear localidad para boletería",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('ferchoLocationId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"venueId\": {{venueId}},\n  \"name\": \"Tribuna Fercho {{runId}}\",\n  \"capacity\": 50\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/locations",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "locations"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear torneo para boletos, apuestas y goles",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('ferchoTournamentId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Copa Fercho {{runId}}\",\n  \"sportId\": {{sportId}},\n  \"startDate\": \"{{tournamentStart}}\",\n  \"endDate\": \"{{tournamentEnd}}\",\n  \"registrationOpensAt\": \"{{registrationOpensAt}}\",\n  \"registrationClosesAt\": \"{{registrationClosesAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/tournaments",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournaments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Abrir inscripciones del torneo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"REGISTRATION_OPEN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/tournaments/{{ferchoTournamentId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{ferchoTournamentId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Habilitar escenario del torneo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tournamentId\": {{ferchoTournamentId}},\n  \"venueId\": {{venueId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/tournament-venues",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournament-venues"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Inscribir equipos en el torneo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tournamentId\": {{ferchoTournamentId}},\n  \"teamIds\": [\n    {{teamId}},\n    {{team2Id}}\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/registrations",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "registrations"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Iniciar torneo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/tournaments/{{ferchoTournamentId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{ferchoTournamentId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear fase semifinal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('ferchoPhaseId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tournamentId\": {{ferchoTournamentId}},\n  \"name\": \"Semifinal Fercho\",\n  \"order\": 1,\n  \"round\": \"SEMI_FINAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/final-phases",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "final-phases"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear pelota 1 (partido principal)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('ferchoBallId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"brand\": \"Golty\",\n  \"model\": \"Fercho-1 {{runId}}\",\n  \"size\": \"5\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/balls",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "balls"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Programar partido 1 (principal)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const start = new Date(pm.collectionVariables.get('tournamentStart') + 'T20:00:00.000Z');",
+                  "pm.collectionVariables.set('matchAt', new Date(start.getTime() + 86400000).toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('ferchoMatchId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phaseId\": {{ferchoPhaseId}},\n  \"homeTeamId\": {{teamId}},\n  \"awayTeamId\": {{team2Id}},\n  \"venueId\": {{venueId}},\n  \"ballId\": {{ferchoBallId}},\n  \"scheduledAt\": \"{{matchAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/matches",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear pelota 2 (partido cancelación)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('ferchoBall2Id', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"brand\": \"Golty\",\n  \"model\": \"Fercho-2 {{runId}}\",\n  \"size\": \"5\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/balls",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "balls"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Programar partido 2 (para cancelar boleto/apuesta)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('ferchoMatch2Id', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phaseId\": {{ferchoPhaseId}},\n  \"homeTeamId\": {{teamId}},\n  \"awayTeamId\": {{team2Id}},\n  \"venueId\": {{venueId}},\n  \"ballId\": {{ferchoBall2Id}},\n  \"scheduledAt\": \"{{matchAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/matches",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear pelota 3 (partido anulación admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('ferchoBall3Id', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"brand\": \"Golty\",\n  \"model\": \"Fercho-3 {{runId}}\",\n  \"size\": \"5\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/balls",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "balls"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Programar partido 3 (para anulación admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('ferchoMatch3Id', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phaseId\": {{ferchoPhaseId}},\n  \"homeTeamId\": {{teamId}},\n  \"awayTeamId\": {{team2Id}},\n  \"venueId\": {{venueId}},\n  \"ballId\": {{ferchoBall3Id}},\n  \"scheduledAt\": \"{{matchAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/matches",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "24 · Boletos y disponibilidad (R15, R16 · Fercho)",
+      "description": "Disponibilidad por localidad (/tickets/availability), compra propia (/me/tickets) y emisión/gestión administrativa (/tickets).",
+      "item": [
+        {
+          "name": "Consultar disponibilidad del partido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Lista localidades con aforo', () => pm.expect(pm.response.json().locations).to.be.an('array').that.is.not.empty);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/tickets/availability?matchId={{ferchoMatchId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tickets",
+                "availability"
+              ],
+              "query": [
+                {
+                  "key": "matchId",
+                  "value": "{{ferchoMatchId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Comprar mi boleto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('myTicketId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matchId\": {{ferchoMatchId}},\n  \"locationId\": {{ferchoLocationId}},\n  \"price\": 45000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/me/tickets",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "tickets"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[409] Doble boleto del mismo aficionado en el partido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matchId\": {{ferchoMatchId}},\n  \"locationId\": {{ferchoLocationId}},\n  \"price\": 45000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/me/tickets",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "tickets"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar mis boletos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/me/tickets?matchId={{ferchoMatchId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "tickets"
+              ],
+              "query": [
+                {
+                  "key": "matchId",
+                  "value": "{{ferchoMatchId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver mi boleto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/me/tickets/{{myTicketId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "tickets",
+                "{{myTicketId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Comprar mi boleto temporal en partido 2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('myTicket2Id', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matchId\": {{ferchoMatch2Id}},\n  \"locationId\": {{ferchoLocationId}},\n  \"price\": 45000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/me/tickets",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "tickets"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar mi boleto temporal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/me/tickets/{{myTicket2Id}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "tickets",
+                "{{myTicket2Id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Emitir boleto (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('ticketId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matchId\": {{ferchoMatchId}},\n  \"fanId\": {{fanId}},\n  \"locationId\": {{ferchoLocationId}},\n  \"price\": 50000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/tickets",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tickets"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar boletos (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/tickets?matchId={{ferchoMatchId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tickets"
+              ],
+              "query": [
+                {
+                  "key": "matchId",
+                  "value": "{{ferchoMatchId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver boleto (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/tickets/{{ticketId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tickets",
+                "{{ticketId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar boleto (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/tickets/{{ticketId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tickets",
+                "{{ticketId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "25 · Apuestas y liquidación (HU-GC-11 · Fercho)",
+      "description": "Partidos disponibles (/bets/available-matches), cierre/reapertura manual (bettingOpen), apuestas propias (/me/bets, /me/bets/:id/cancel) y gestión administrativa (/bets, /bets/:id/void).",
+      "item": [
+        {
+          "name": "Partidos disponibles para apostar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Incluye partido 1', () => pm.expect(pm.response.json().some((m) => m.id === Number(pm.collectionVariables.get('ferchoMatchId')))).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/bets/available-matches?tournamentId={{ferchoTournamentId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "bets",
+                "available-matches"
+              ],
+              "query": [
+                {
+                  "key": "tournamentId",
+                  "value": "{{ferchoTournamentId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cerrar apuestas manualmente (bettingOpen: false)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Apuestas cerradas', () => pm.expect(pm.response.json().bettingOpen).to.eql(false));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bettingOpen\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/matches/{{ferchoMatchId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{ferchoMatchId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reabrir apuestas manualmente (bettingOpen: true)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Apuestas abiertas', () => pm.expect(pm.response.json().bettingOpen).to.eql(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bettingOpen\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/matches/{{ferchoMatchId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{ferchoMatchId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar mi apuesta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('myBetId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matchId\": {{ferchoMatchId}},\n  \"fanPaymentMethodId\": {{fanPaymentMethodId}},\n  \"selection\": \"HOME_WIN\",\n  \"amount\": 20000,\n  \"odds\": 2.15\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/me/bets",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "bets"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar mis apuestas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/me/bets?status=PENDING",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "bets"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "PENDING"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver mi apuesta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/me/bets/{{myBetId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "bets",
+                "{{myBetId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar mi apuesta pendiente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Cuota fija inmutable', () => pm.expect(pm.response.json().odds).to.eql(2.15));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 25000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/me/bets/{{myBetId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "bets",
+                "{{myBetId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar mi apuesta en partido 2 (para cancelar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('myBetToCancelId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matchId\": {{ferchoMatch2Id}},\n  \"fanPaymentMethodId\": {{fanPaymentMethodId}},\n  \"selection\": \"DRAW\",\n  \"amount\": 10000,\n  \"odds\": 3.1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/me/bets",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "bets"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cancelar mi apuesta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Estado CANCELLED', () => pm.expect(pm.response.json().status).to.eql('CANCELLED'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Cambio de pronóstico\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/me/bets/{{myBetToCancelId}}/cancel",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "bets",
+                "{{myBetToCancelId}}",
+                "cancel"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar apuesta (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('betId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fanId\": {{myFanId}},\n  \"matchId\": {{ferchoMatch3Id}},\n  \"fanPaymentMethodId\": {{fanPaymentMethodId}},\n  \"selection\": \"AWAY_WIN\",\n  \"amount\": 15000,\n  \"odds\": 2.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/bets",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "bets"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar apuestas (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/bets?tournamentId={{ferchoTournamentId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "bets"
+              ],
+              "query": [
+                {
+                  "key": "tournamentId",
+                  "value": "{{ferchoTournamentId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver apuesta (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/bets/{{betId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "bets",
+                "{{betId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Anular apuesta (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Estado VOID', () => pm.expect(pm.response.json().status).to.eql('VOID'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Anulada por administración\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/bets/{{betId}}/void",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "bets",
+                "{{betId}}",
+                "void"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "26 · Anotaciones y resultado final (HU-GC-07 · Fercho)",
+      "description": "Inicia partido 1, gestiona anotaciones (/goals), registra resultado final (PUT /matches/:id/result) y comprueba la liquidación automática.",
+      "item": [
+        {
+          "name": "Iniciar partido 1 (cierra apuestas)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Cierra apuestas', () => pm.expect(pm.response.json().bettingOpen).to.eql(false));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"IN_PROGRESS\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/matches/{{ferchoMatchId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{ferchoMatchId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar anotación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('goalId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matchId\": {{ferchoMatchId}},\n  \"playerId\": {{playerId}},\n  \"minute\": 23,\n  \"points\": 1,\n  \"description\": \"Gol de media distancia\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/goals",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "goals"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar anotaciones del partido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/goals?matchId={{ferchoMatchId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "goals"
+              ],
+              "query": [
+                {
+                  "key": "matchId",
+                  "value": "{{ferchoMatchId}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ver anotación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/goals/{{goalId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "goals",
+                "{{goalId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Actualizar anotación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"minute\": 25,\n  \"description\": \"Gol de tiro libre\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/goals/{{goalId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "goals",
+                "{{goalId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar anotación temporal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('goalDisposableId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matchId\": {{ferchoMatchId}},\n  \"playerId\": {{playerId}},\n  \"minute\": 40,\n  \"points\": 1,\n  \"description\": \"Anotación temporal\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/goals",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "goals"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar anotación temporal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/goals/{{goalDisposableId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "goals",
+                "{{goalDisposableId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Registrar resultado final y liquidar apuestas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Partido finalizado 2 - 1', () => { const m = pm.response.json(); pm.expect(m.status).to.eql('FINISHED'); pm.expect(m.homeScore).to.eql(2); pm.expect(m.awayScore).to.eql(1); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"homeScore\": 2,\n  \"awayScore\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/matches/{{ferchoMatchId}}/result",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{ferchoMatchId}}",
+                "result"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Verificar apuesta liquidada automáticamente (WON)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Apuesta ganada con pago exacto', () => { const b = pm.response.json(); pm.expect(b.status).to.eql('WON'); pm.expect(b.payout).to.eql(53750); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{fanToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/me/bets/{{myBetId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "me",
+                "bets",
+                "{{myBetId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Corregir marcador final sin duplicar liquidación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Marcador actualizado a 3 - 1', () => pm.expect(pm.response.json().homeScore).to.eql(3));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"homeScore\": 3,\n  \"awayScore\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/matches/{{ferchoMatchId}}/result",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "matches",
+                "{{ferchoMatchId}}",
+                "result"
               ]
             }
           }
