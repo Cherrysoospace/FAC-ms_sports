@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Fan } from './entities/fan.entity';
 import { FanTeam } from './entities/fan-team.entity';
+import { FanPaymentMethod } from '../payment-methods/entities/fan-payment-method.entity';
 import { FansRepository } from './repositories/fans.repository';
 import { FanTeamsRepository } from './repositories/fan-teams.repository';
 import { FanMapper } from './mappers/fan.mapper';
@@ -14,7 +15,10 @@ import { MeFavoriteTeamsController } from './me-favorite-teams.controller';
 import { TeamsModule } from '../teams/teams.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Fan, FanTeam]), TeamsModule],
+  imports: [
+    TypeOrmModule.forFeature([Fan, FanTeam, FanPaymentMethod]),
+    TeamsModule,
+  ],
   controllers: [FansController, MeFanController, MeFavoriteTeamsController],
   providers: [
     FansService,

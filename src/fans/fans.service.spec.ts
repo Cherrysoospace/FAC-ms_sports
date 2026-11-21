@@ -33,6 +33,7 @@ describe('FansService', () => {
     findByDocumentNumber: jest.fn(async () => null as Fan | null),
     findByEmailIgnoringCase: jest.fn(async () => null as Fan | null),
     countFavoriteTeams: jest.fn(async () => 0),
+    countPaymentMethods: jest.fn(async () => 0),
     countFavoriteTeamsByFanIds: jest.fn(async () => new Map<number, number>()),
   };
 
@@ -164,6 +165,15 @@ describe('FansService', () => {
       fansRepository.countFavoriteTeams.mockResolvedValueOnce(2);
 
       await expect(service.remove(1)).rejects.toThrow('2 equipos favoritos');
+      expect(fanRepository.remove).not.toHaveBeenCalled();
+    });
+
+    it('bloquea con 409 cuando el aficionado tiene métodos de pago asociados', async () => {
+      fanRepository.findOne.mockResolvedValueOnce(makeFan());
+      fansRepository.countFavoriteTeams.mockResolvedValueOnce(0);
+      fansRepository.countPaymentMethods.mockResolvedValueOnce(1);
+
+      await expect(service.remove(1)).rejects.toThrow('1 método de pago');
       expect(fanRepository.remove).not.toHaveBeenCalled();
     });
 

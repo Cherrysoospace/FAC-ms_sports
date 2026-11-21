@@ -11,7 +11,7 @@ import { UpdateMyFanDto } from './dto/update-my-fan.dto';
 import { FanQueryDto } from './dto/fan-query.dto';
 import { FanResponseDto } from './dto/fan-response.dto';
 import type { AuthenticatedUser } from '../security/authenticated-user';
-import { plural } from '../common/text/spanish-list';
+import { joinList, plural } from '../common/text/spanish-list';
 import {
   ApplicationException,
   BusinessRuleException,
@@ -77,20 +77,23 @@ export class FansService {
 
   async remove(id: number): Promise<{ message: string }> {
     const fan = await this.getFanOrFail(id);
-    const favoriteTeams = await this.fansRepository.countFavoriteTeams(id);
+    const [favoriteTeams, paymentMethods] = await Promise.all([
+      this.fansRepository.countFavoriteTeams(id),
+      this.fansRepository.countPaymentMethods(id),
+    ]);
 
-    const favoriteText = plural(
-      favoriteTeams,
-      'equipo favorito',
-      'equipos favoritos',
-    );
-    if (favoriteText) {
+    const dependencies = [
+      plural(favoriteTeams, 'equipo favorito', 'equipos favoritos'),
+      plural(paymentMethods, 'método de pago', 'métodos de pago'),
+    ].filter((dependency): dependency is string => dependency !== null);
+
+    if (dependencies.length > 0) {
       throw new BusinessRuleException(
-        `No se puede eliminar el aficionado porque tiene ${favoriteText} ` +
+        `No se puede eliminar el aficionado porque tiene ${joinList(dependencies)} ` +
           'asociados. Desactívelo con PATCH { "active": false }',
       );
     }
-    // TODO (Fercho): bloquear también si tiene métodos de pago, boletos o apuestas.
+    // TODO (Fercho): bloquear también si tiene boletos o apuestas.
 
     await this.fanRepository.remove(fan);
     return { message: `Aficionado #${id} eliminado correctamente` };

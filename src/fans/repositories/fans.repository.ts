@@ -8,6 +8,7 @@ import {
 } from '../../common/database/query.util';
 import { Fan } from '../entities/fan.entity';
 import { FanTeam } from '../entities/fan-team.entity';
+import { FanPaymentMethod } from '../../payment-methods/entities/fan-payment-method.entity';
 
 export interface FanFilters {
   search?: string;
@@ -24,6 +25,8 @@ export class FansRepository {
     private readonly fanRepository: Repository<Fan>,
     @InjectRepository(FanTeam)
     private readonly fanTeamRepository: Repository<FanTeam>,
+    @InjectRepository(FanPaymentMethod)
+    private readonly fanPaymentMethodRepository: Repository<FanPaymentMethod>,
   ) {}
 
   findByFilters(filters: FanFilters): Promise<Fan[]> {
@@ -86,6 +89,12 @@ export class FansRepository {
 
   countFavoriteTeams(fanId: number): Promise<number> {
     return this.fanTeamRepository.count({ where: { fan: { id: fanId } } });
+  }
+
+  countPaymentMethods(fanId: number): Promise<number> {
+    return this.fanPaymentMethodRepository.count({
+      where: { fan: { id: fanId } },
+    });
   }
 
   async countFavoriteTeamsByFanIds(
