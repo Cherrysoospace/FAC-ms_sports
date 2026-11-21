@@ -44,11 +44,11 @@ export class MatchNotifier {
         `${homeTeam.name} vs ${awayTeam.name}\n` +
         `Fecha: ${match.scheduledAt.toLocaleString('es-CO', { dateStyle: 'full', timeStyle: 'short' })}\n` +
         `Escenario: ${venue.name}\n\n` +
-        'Recibes este correo porque asististe o apostaste en partidos anteriores de estos equipos.',
+        'Recibes este correo porque sigues como favorito a alguno de estos equipos o participaste con boleto o apuesta en sus partidos anteriores.',
     });
   }
 
-  // HU-GC-07: resume el resultado final del partido a quienes tienen boleto o apuesta.
+  // HU-GC-07: resume el resultado final del partido a quienes tienen boleto, apuesta o equipo favorito.
   async notifyMatchResult(
     match: Match,
     isFirstFinalization: boolean,
@@ -56,7 +56,7 @@ export class MatchNotifier {
     const recipients = await this.findFansOfMatch(match);
     if (recipients.length === 0) {
       this.logger.log(
-        `Partido #${match.id}: no hay aficionados con boleto o apuesta para avisar del resultado`,
+        `Partido #${match.id}: no hay aficionados interesados para avisar del resultado`,
       );
       return;
     }
@@ -76,16 +76,16 @@ export class MatchNotifier {
         `${homeTeam.name} ${homeScore} - ${awayScore} ${awayTeam.name}\n` +
         `Fecha: ${match.scheduledAt.toLocaleString('es-CO', { dateStyle: 'full', timeStyle: 'short' })}\n` +
         `Escenario: ${venue.name}\n\n` +
-        'Recibes este correo porque compraste boleto o realizaste una apuesta en este partido.',
+        'Recibes este correo porque compraste boleto, realizaste una apuesta o sigues como favorito a uno de los equipos.',
     });
   }
 
-  // HU-GC-07: avisa cada anotación registrada a quienes tienen boleto o apuesta en el partido.
+  // HU-GC-07: avisa cada anotación registrada a quienes tienen boleto, apuesta o equipo favorito.
   async notifyGoalRecorded(match: Match, goal: Goal): Promise<void> {
     const recipients = await this.findFansOfMatch(match);
     if (recipients.length === 0) {
       this.logger.log(
-        `Partido #${match.id}: no hay aficionados con boleto o apuesta para avisar la anotación #${goal.id}`,
+        `Partido #${match.id}: no hay aficionados interesados para avisar la anotación #${goal.id}`,
       );
       return;
     }
@@ -101,15 +101,13 @@ export class MatchNotifier {
         `Partido: ${homeTeam.name} vs ${awayTeam.name}\n` +
         `Jugador: ${goal.player.fullName}\n` +
         `Minuto: ${goal.minute}' | Puntos: ${goal.points}${detail}\n\n` +
-        'Recibes este correo porque compraste boleto o realizaste una apuesta en este partido.',
+        'Recibes este correo porque compraste boleto, realizaste una apuesta o sigues como favorito a uno de los equipos.',
     });
   }
 
   /**
-   * Correos de los aficionados con boleto o apuesta en partidos anteriores
-   * (distintos de `match`) de cualquiera de los dos equipos.
-   *
-   * TODO (Fercho): en Fase 12 conectar el proveedor real de `MATCH_AUDIENCE_PORT`.
+   * Correos de aficionados interesados al programar el partido (boletos o apuestas
+   * en partidos previos de los equipos, o seguidores de cualquiera de los dos clubes).
    */
   private findFansOfPreviousMatches(match: Match): Promise<string[]> {
     if (!this.audiencePort) return Promise.resolve([]);

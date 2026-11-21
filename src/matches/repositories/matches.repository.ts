@@ -7,6 +7,8 @@ import { Registration } from '../../registrations/entities/registration.entity';
 import { RegistrationStatus } from '../../registrations/enums/registration-status.enum';
 import { MatchPosition } from '../../match-positions/entities/match-position.entity';
 import { Goal } from '../../goals/entities/goal.entity';
+import { Ticket } from '../../tickets/entities/ticket.entity';
+import { Bet } from '../../bets/entities/bet.entity';
 import { TournamentStatus } from '../../tournaments/enums/tournament-status.enum';
 import { MatchStatus } from '../enums/match-status.enum';
 import { MatchQueryDto } from '../dto/match-query.dto';
@@ -32,6 +34,10 @@ export class MatchesRepository {
     private readonly positionRepository: Repository<MatchPosition>,
     @InjectRepository(Goal)
     private readonly goalRepository: Repository<Goal>,
+    @InjectRepository(Ticket)
+    private readonly ticketRepository: Repository<Ticket>,
+    @InjectRepository(Bet)
+    private readonly betRepository: Repository<Bet>,
   ) {}
 
   // Partido con todo lo que necesita MatchMapper.
@@ -126,6 +132,16 @@ export class MatchesRepository {
   // Anotaciones del partido (HU-GC-07): bloquean la eliminación.
   countGoals(matchId: number): Promise<number> {
     return this.goalRepository.count({ where: { match: { id: matchId } } });
+  }
+
+  // Boletos emitidos para el partido (R16): bloquean la eliminación.
+  countTickets(matchId: number): Promise<number> {
+    return this.ticketRepository.count({ where: { match: { id: matchId } } });
+  }
+
+  // Apuestas registradas en el partido (R17): bloquean la eliminación.
+  countBets(matchId: number): Promise<number> {
+    return this.betRepository.count({ where: { match: { id: matchId } } });
   }
 
   // "Habilitado para la competencia" = inscripción ACTIVE en el torneo.

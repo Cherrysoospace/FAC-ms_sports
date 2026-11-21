@@ -56,6 +56,8 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
     findOneWithRelations: jest.fn(),
     countPositions: jest.fn(async () => 0),
     countGoals: jest.fn(async () => 0),
+    countTickets: jest.fn(async () => 0),
+    countBets: jest.fn(async () => 0),
   };
   const matchNotifier = {
     notifyNewMatch: jest.fn(async () => undefined),
@@ -283,6 +285,45 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
         'seguimiento espacial y 1 anotación',
       );
       expect(matchRepository.remove).not.toHaveBeenCalled();
+    });
+
+    it('bloquea con 409 cuando tiene boletos, apuestas o todas las dependencias asociadas', async () => {
+      const service = buildService(true);
+
+      matchesRepository.findOneWithRelations.mockResolvedValueOnce(
+        createMatchEntity({ status: MatchStatus.SCHEDULED }),
+      );
+      matchesRepository.countTickets.mockResolvedValueOnce(2);
+      await expect(service.remove(10)).rejects.toThrow('2 boletos');
+
+      matchesRepository.findOneWithRelations.mockResolvedValueOnce(
+        createMatchEntity({ status: MatchStatus.SCHEDULED }),
+      );
+      matchesRepository.countBets.mockResolvedValueOnce(3);
+      await expect(service.remove(10)).rejects.toThrow('3 apuestas');
+
+      matchesRepository.findOneWithRelations.mockResolvedValueOnce(
+        createMatchEntity({ status: MatchStatus.CANCELLED }),
+      );
+      matchesRepository.countPositions.mockResolvedValueOnce(4);
+      matchesRepository.countGoals.mockResolvedValueOnce(1);
+      matchesRepository.countTickets.mockResolvedValueOnce(2);
+      matchesRepository.countBets.mockResolvedValueOnce(3);
+      await expect(service.remove(10)).rejects.toThrow(
+        'seguimiento espacial, 1 anotación, 2 boletos y 3 apuestas',
+      );
+      expect(matchRepository.remove).not.toHaveBeenCalled();
+    });
+
+    it('elimina el partido cuando no tiene dependencias asociadas', async () => {
+      const scheduled = createMatchEntity({ status: MatchStatus.SCHEDULED });
+      matchesRepository.findOneWithRelations.mockResolvedValueOnce(scheduled);
+
+      const service = buildService(true);
+      await expect(service.remove(10)).resolves.toEqual({
+        message: 'Partido #10 eliminado correctamente',
+      });
+      expect(matchRepository.remove).toHaveBeenCalledWith(scheduled);
     });
   });
 

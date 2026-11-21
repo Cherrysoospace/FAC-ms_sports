@@ -5,6 +5,9 @@ import { Phase } from '../phases/entities/phase.entity';
 import { Registration } from '../registrations/entities/registration.entity';
 import { MatchPosition } from '../match-positions/entities/match-position.entity';
 import { Goal } from '../goals/entities/goal.entity';
+import { Ticket } from '../tickets/entities/ticket.entity';
+import { Bet } from '../bets/entities/bet.entity';
+import { MATCH_AUDIENCE_PORT } from '../common/contracts';
 import { TeamsModule } from '../teams/teams.module';
 import { VenuesModule } from '../venues/venues.module';
 import { BallsModule } from '../balls/balls.module';
@@ -14,11 +17,20 @@ import { BetSettlementModule } from '../bets/bet-settlement.module';
 import { MatchesController } from './matches.controller';
 import { MatchesService } from './matches.service';
 import { MatchesRepository } from './repositories/matches.repository';
+import { MatchAudienceRepository } from './repositories/match-audience.repository';
 import { MatchNotifier } from './match-notifier';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Match, Phase, Registration, MatchPosition, Goal]),
+    TypeOrmModule.forFeature([
+      Match,
+      Phase,
+      Registration,
+      MatchPosition,
+      Goal,
+      Ticket,
+      Bet,
+    ]),
     TeamsModule,
     VenuesModule,
     BallsModule,
@@ -27,7 +39,16 @@ import { MatchNotifier } from './match-notifier';
     BetSettlementModule,
   ],
   controllers: [MatchesController],
-  providers: [MatchesService, MatchesRepository, MatchNotifier],
+  providers: [
+    MatchesService,
+    MatchesRepository,
+    MatchAudienceRepository,
+    {
+      provide: MATCH_AUDIENCE_PORT,
+      useExisting: MatchAudienceRepository,
+    },
+    MatchNotifier,
+  ],
   // Lo usan los módulos de Fercho (getMatchOrFail y MatchNotifier).
   exports: [MatchesService, MatchNotifier],
 })

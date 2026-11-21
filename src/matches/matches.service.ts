@@ -245,14 +245,18 @@ export class MatchesService {
     const match = await this.getMatchOrFail(id);
     MatchRulesPolicy.assertDeletable(match.status);
 
-    const [positions, goals] = await Promise.all([
+    const [positions, goals, tickets, bets] = await Promise.all([
       this.matchesRepository.countPositions(id),
       this.matchesRepository.countGoals(id),
+      this.matchesRepository.countTickets(id),
+      this.matchesRepository.countBets(id),
     ]);
 
     const dependencies = [
       positions > 0 ? 'seguimiento espacial' : null,
       plural(goals, 'anotación', 'anotaciones'),
+      plural(tickets, 'boleto', 'boletos'),
+      plural(bets, 'apuesta', 'apuestas'),
     ].filter((dependency): dependency is string => dependency !== null);
 
     if (dependencies.length > 0) {
@@ -261,7 +265,6 @@ export class MatchesService {
           'Si no se va a jugar, cancélelo',
       );
     }
-    // TODO (Fercho): bloquear (409) también si tiene boletos o apuestas.
 
     await this.matchRepository.remove(match);
     return { message: `Partido #${id} eliminado correctamente` };
