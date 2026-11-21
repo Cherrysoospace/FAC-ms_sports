@@ -23,6 +23,7 @@ import { SecurityModule } from './security/security.module';
 import { MatchesModule } from './matches/matches.module';
 import { MatchPositionsModule } from './match-positions/match-positions.module';
 import { GoalsModule } from './goals/goals.module';
+import { FansModule } from './fans/fans.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { GoalsModule } from './goals/goals.module';
     MatchesModule,
     MatchPositionsModule,
     GoalsModule,
+    FansModule,
     // Guard global: todas las rutas pasan por ms_security salvo las @Public()
     SecurityModule,
   ],
