@@ -285,4 +285,42 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
       expect(matchRepository.remove).not.toHaveBeenCalled();
     });
   });
+
+  describe('cancelación en update (HU-GC-11)', () => {
+    it('bloquea el partido, cierra apuestas y anula apuestas pendientes en la misma transacción', async () => {
+      const scheduled = createMatchEntity({
+        status: MatchStatus.SCHEDULED,
+        bettingOpen: true,
+      });
+      const locked = createMatchEntity({
+        status: MatchStatus.SCHEDULED,
+        bettingOpen: true,
+      });
+      const cancelled = createMatchEntity({
+        status: MatchStatus.CANCELLED,
+        bettingOpen: false,
+      });
+
+      matchesRepository.findOneWithRelations
+        .mockResolvedValueOnce(scheduled)
+        .mockResolvedValueOnce(cancelled);
+      txManager.findOne.mockResolvedValueOnce(locked);
+
+      const service = buildService(true);
+      const result = await service.update(10, { status: MatchStatus.CANCELLED });
+
+      expect(txManager.findOne).toHaveBeenCalledWith(Match, {
+        where: { id: 10 },
+        lock: { mode: 'pessimistic_write' },
+      });
+      expect(locked.status).toBe(MatchStatus.CANCELLED);
+      expect(locked.bettingOpen).toBe(false);
+      expect(cancelForMatchMock).toHaveBeenCalledWith(
+        10,
+        'El partido fue cancelado',
+        txManager,
+      );
+      expect(result.status).toBe(MatchStatus.CANCELLED);
+    });
+  });
 });

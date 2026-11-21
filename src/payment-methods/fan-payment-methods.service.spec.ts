@@ -105,6 +105,7 @@ describe('Métodos de pago (PaymentMethodsService y FanPaymentMethodsService)', 
       findByFilters: jest.fn(async () => [] as FanPaymentMethod[]),
       findOneWithRelations: jest.fn(),
       findDuplicate: jest.fn(async () => null as FanPaymentMethod | null),
+      countBets: jest.fn(async () => 0),
     };
     const fansService = {
       getFanBySecurityUserOrFail: jest.fn(async () => makeFan(1)),
@@ -199,5 +200,14 @@ describe('Métodos de pago (PaymentMethodsService y FanPaymentMethodsService)', 
         'deshabilitado',
       );
     });
+
+    it('bloquea con 409 eliminar un método propio asociado a apuestas', async () => {
+      fpmCustomRepo.findOneWithRelations.mockResolvedValueOnce(makeFanMethod());
+      fpmCustomRepo.countBets.mockResolvedValueOnce(2);
+
+      await expect(service.removeMine(user, 12)).rejects.toThrow('2 apuestas');
+      expect(fpmRepo.remove).not.toHaveBeenCalled();
+    });
   });
 });
+

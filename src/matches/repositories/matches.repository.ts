@@ -7,7 +7,16 @@ import { Registration } from '../../registrations/entities/registration.entity';
 import { RegistrationStatus } from '../../registrations/enums/registration-status.enum';
 import { MatchPosition } from '../../match-positions/entities/match-position.entity';
 import { Goal } from '../../goals/entities/goal.entity';
+import { TournamentStatus } from '../../tournaments/enums/tournament-status.enum';
+import { MatchStatus } from '../enums/match-status.enum';
 import { MatchQueryDto } from '../dto/match-query.dto';
+
+export interface AvailableBetMatchesFilters {
+  tournamentId?: number;
+  phaseId?: number;
+  teamId?: number;
+  venueId?: number;
+}
 
 // Consultas propias del módulo de partidos.
 @Injectable()
@@ -67,6 +76,38 @@ export class MatchesRepository {
 
   findOneWithRelations(id: number): Promise<Match | null> {
     return this.withRelations().where('match.id = :id', { id }).getOne();
+  }
+
+  findAvailableForBetting(
+    filters: AvailableBetMatchesFilters,
+  ): Promise<Match[]> {
+    const qb = this.withRelations()
+      .where('match.status = :status', { status: MatchStatus.SCHEDULED })
+      .andWhere('match.bettingOpen = :bettingOpen', { bettingOpen: true })
+      .andWhere('tournament.status NOT IN (:...closedStatuses)', {
+        closedStatuses: [TournamentStatus.FINISHED, TournamentStatus.CANCELLED],
+      })
+      .orderBy('match.scheduledAt', 'ASC')
+      .addOrderBy('match.id', 'ASC');
+
+    if (filters.tournamentId !== undefined) {
+      qb.andWhere('tournament.id = :tournamentId', {
+        tournamentId: filters.tournamentId,
+      });
+    }
+    if (filters.phaseId !== undefined) {
+      qb.andWhere('phase.id = :phaseId', { phaseId: filters.phaseId });
+    }
+    if (filters.teamId !== undefined) {
+      qb.andWhere('(homeTeam.id = :teamId OR awayTeam.id = :teamId)', {
+        teamId: filters.teamId,
+      });
+    }
+    if (filters.venueId !== undefined) {
+      qb.andWhere('venue.id = :venueId', { venueId: filters.venueId });
+    }
+
+    return qb.getMany();
   }
 
   // Fase (de grupos o final) con su torneo. TypeORM devuelve la subclase.

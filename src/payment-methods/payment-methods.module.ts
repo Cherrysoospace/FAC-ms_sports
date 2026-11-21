@@ -5,6 +5,7 @@ import {
   type IPaymentMethodValidator,
 } from '../common/contracts';
 import { FansModule } from '../fans/fans.module';
+import { Bet } from '../bets/entities/bet.entity';
 import { PaymentMethod } from './entities/payment-method.entity';
 import { FanPaymentMethod } from './entities/fan-payment-method.entity';
 import { PaymentMethodsRepository } from './repositories/payment-methods.repository';
@@ -22,7 +23,7 @@ import { BankTransferPaymentMethodValidator } from './validators/bank-transfer-p
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([PaymentMethod, FanPaymentMethod]),
+    TypeOrmModule.forFeature([PaymentMethod, FanPaymentMethod, Bet]),
     FansModule,
   ],
   controllers: [PaymentMethodsController, MePaymentMethodsController],
@@ -60,3 +61,4 @@ import { BankTransferPaymentMethodValidator } from './validators/bank-transfer-p
   ],
 })
 export class PaymentMethodsModule {}
+

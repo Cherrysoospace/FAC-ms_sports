@@ -35,6 +35,7 @@ describe('FansService', () => {
     countFavoriteTeams: jest.fn(async () => 0),
     countPaymentMethods: jest.fn(async () => 0),
     countTickets: jest.fn(async () => 0),
+    countBets: jest.fn(async () => 0),
     countFavoriteTeamsByFanIds: jest.fn(async () => new Map<number, number>()),
   };
 
@@ -185,6 +186,17 @@ describe('FansService', () => {
       fansRepository.countTickets.mockResolvedValueOnce(2);
 
       await expect(service.remove(1)).rejects.toThrow('2 boletos');
+      expect(fanRepository.remove).not.toHaveBeenCalled();
+    });
+
+    it('bloquea con 409 cuando el aficionado tiene apuestas asociadas', async () => {
+      fanRepository.findOne.mockResolvedValueOnce(makeFan());
+      fansRepository.countFavoriteTeams.mockResolvedValueOnce(0);
+      fansRepository.countPaymentMethods.mockResolvedValueOnce(0);
+      fansRepository.countTickets.mockResolvedValueOnce(0);
+      fansRepository.countBets.mockResolvedValueOnce(3);
+
+      await expect(service.remove(1)).rejects.toThrow('3 apuestas');
       expect(fanRepository.remove).not.toHaveBeenCalled();
     });
 

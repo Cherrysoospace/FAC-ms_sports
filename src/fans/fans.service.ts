@@ -77,16 +77,18 @@ export class FansService {
 
   async remove(id: number): Promise<{ message: string }> {
     const fan = await this.getFanOrFail(id);
-    const [favoriteTeams, paymentMethods, tickets] = await Promise.all([
+    const [favoriteTeams, paymentMethods, tickets, bets] = await Promise.all([
       this.fansRepository.countFavoriteTeams(id),
       this.fansRepository.countPaymentMethods(id),
       this.fansRepository.countTickets(id),
+      this.fansRepository.countBets(id),
     ]);
 
     const dependencies = [
       plural(favoriteTeams, 'equipo favorito', 'equipos favoritos'),
       plural(paymentMethods, 'método de pago', 'métodos de pago'),
       plural(tickets, 'boleto', 'boletos'),
+      plural(bets, 'apuesta', 'apuestas'),
     ].filter((dependency): dependency is string => dependency !== null);
 
     if (dependencies.length > 0) {
@@ -95,7 +97,6 @@ export class FansService {
         'asociados. Desactívelo con PATCH { "active": false }',
       );
     }
-    // TODO (Fercho): bloquear también si tiene apuestas.
 
     await this.fanRepository.remove(fan);
     return { message: `Aficionado #${id} eliminado correctamente` };

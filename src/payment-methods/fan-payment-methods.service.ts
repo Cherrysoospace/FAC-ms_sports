@@ -8,9 +8,11 @@ import {
 } from '../common/contracts';
 import {
   ApplicationException,
+  BusinessRuleException,
   ErrorCase,
   ResourceNotFoundException,
 } from '../common/exceptions';
+import { formatCount } from '../common/text/spanish-list';
 import { FansService } from '../fans/fans.service';
 import type { AuthenticatedUser } from '../security/authenticated-user';
 import { FanPaymentMethod } from './entities/fan-payment-method.entity';
@@ -137,7 +139,15 @@ export class FanPaymentMethodsService {
     const record = await this.getFanPaymentMethodOrFail(id);
     this.assertOwnership(record, fan.id);
 
-    // TODO (Fercho): en Fase 11 bloquear (409) si tiene apuestas asociadas (R26).
+    const bets = await this.fanPaymentMethodsRepository.countBets(id);
+    if (bets > 0) {
+      throw new BusinessRuleException(
+        `No se puede eliminar el método de pago '${record.alias}' porque tiene ` +
+          `${formatCount(bets, 'apuesta', 'apuestas')} asociadas. ` +
+          'Desactívelo con PATCH { "active": false }',
+      );
+    }
+
     await this.fanPaymentMethodRepository.remove(record);
     return { message: `Método de pago '${record.alias}' eliminado correctamente` };
   }
@@ -219,3 +229,4 @@ export class FanPaymentMethodsService {
     }
   }
 }
+

@@ -3,7 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Match } from './entities/match.entity';
 import { MatchStatus } from './enums/match-status.enum';
-import { MatchesRepository } from './repositories/matches.repository';
+import {
+  MatchesRepository,
+  type AvailableBetMatchesFilters,
+} from './repositories/matches.repository';
 import { MatchMapper } from './mappers/match.mapper';
 import { MatchNotifier } from './match-notifier';
 import {
@@ -65,6 +68,14 @@ export class MatchesService {
   async findAll(query: MatchQueryDto): Promise<MatchResponseDto[]> {
     return MatchMapper.toResponseDtoList(
       await this.matchesRepository.findByFilters(query),
+    );
+  }
+
+  async findAvailableForBetting(
+    filters: AvailableBetMatchesFilters,
+  ): Promise<MatchResponseDto[]> {
+    return MatchMapper.toResponseDtoList(
+      await this.matchesRepository.findAvailableForBetting(filters),
     );
   }
 
@@ -132,6 +143,40 @@ export class MatchesService {
 
     if (dto.status !== undefined) {
       MatchRulesPolicy.assertTransition(match.status, dto.status);
+      if (
+        dto.status === MatchStatus.CANCELLED &&
+        match.status !== MatchStatus.CANCELLED
+      ) {
+        await this.dataSource.transaction(async (manager) => {
+          const locked = await manager.findOne(Match, {
+            where: { id },
+            lock: { mode: 'pessimistic_write' },
+          });
+          if (!locked) throw ResourceNotFoundException.of('Partido', id);
+
+          MatchRulesPolicy.assertTransition(locked.status, MatchStatus.CANCELLED);
+          if (changesData) {
+            MatchRulesPolicy.assertEditable(locked.status);
+            locked.homeTeam = match.homeTeam;
+            locked.awayTeam = match.awayTeam;
+            locked.venue = match.venue;
+            locked.ball = match.ball;
+            locked.scheduledAt = match.scheduledAt;
+          }
+          locked.status = MatchStatus.CANCELLED;
+          locked.bettingOpen = false;
+          await manager.save(Match, locked);
+
+          if (this.betSettlementPort) {
+            await this.betSettlementPort.cancelForMatch(
+              id,
+              'El partido fue cancelado',
+              manager,
+            );
+          }
+        });
+        return this.findOne(id);
+      }
       match.status = dto.status;
       // Las apuestas se cierran cuando el partido empieza (HU-GC-11)
       if (dto.status !== MatchStatus.SCHEDULED) match.bettingOpen = false;

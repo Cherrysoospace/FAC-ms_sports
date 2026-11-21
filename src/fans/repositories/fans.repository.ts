@@ -10,6 +10,7 @@ import { Fan } from '../entities/fan.entity';
 import { FanTeam } from '../entities/fan-team.entity';
 import { FanPaymentMethod } from '../../payment-methods/entities/fan-payment-method.entity';
 import { Ticket } from '../../tickets/entities/ticket.entity';
+import { Bet } from '../../bets/entities/bet.entity';
 
 export interface FanFilters {
   search?: string;
@@ -30,6 +31,8 @@ export class FansRepository {
     private readonly fanPaymentMethodRepository: Repository<FanPaymentMethod>,
     @InjectRepository(Ticket)
     private readonly ticketRepository: Repository<Ticket>,
+    @InjectRepository(Bet)
+    private readonly betRepository: Repository<Bet>,
   ) { }
 
   findByFilters(filters: FanFilters): Promise<Fan[]> {
@@ -102,6 +105,12 @@ export class FansRepository {
 
   countTickets(fanId: number): Promise<number> {
     return this.ticketRepository.count({
+      where: { fan: { id: fanId } },
+    });
+  }
+
+  countBets(fanId: number): Promise<number> {
+    return this.betRepository.count({
       where: { fan: { id: fanId } },
     });
   }

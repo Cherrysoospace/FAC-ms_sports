@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
+import { Bet } from '../../bets/entities/bet.entity';
 import { FanPaymentMethod } from '../entities/fan-payment-method.entity';
 
 export interface FanPaymentMethodFilters {
@@ -17,6 +18,8 @@ export class FanPaymentMethodsRepository {
   constructor(
     @InjectRepository(FanPaymentMethod)
     private readonly fanPaymentMethodRepository: Repository<FanPaymentMethod>,
+    @InjectRepository(Bet)
+    private readonly betRepository: Repository<Bet>,
   ) {}
 
   private withRelations(): SelectQueryBuilder<FanPaymentMethod> {
@@ -75,4 +78,11 @@ export class FanPaymentMethodsRepository {
       where: { fan: { id: fanId } },
     });
   }
+
+  countBets(fanPaymentMethodId: number): Promise<number> {
+    return this.betRepository.count({
+      where: { fanPaymentMethod: { id: fanPaymentMethodId } },
+    });
+  }
 }
+

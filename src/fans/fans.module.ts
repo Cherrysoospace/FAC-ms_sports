@@ -4,6 +4,7 @@ import { Fan } from './entities/fan.entity';
 import { FanTeam } from './entities/fan-team.entity';
 import { FanPaymentMethod } from '../payment-methods/entities/fan-payment-method.entity';
 import { Ticket } from '../tickets/entities/ticket.entity';
+import { Bet } from '../bets/entities/bet.entity';
 import { FansRepository } from './repositories/fans.repository';
 import { FanTeamsRepository } from './repositories/fan-teams.repository';
 import { FanMapper } from './mappers/fan.mapper';
@@ -17,7 +18,7 @@ import { TeamsModule } from '../teams/teams.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Fan, FanTeam, FanPaymentMethod, Ticket]),
+    TypeOrmModule.forFeature([Fan, FanTeam, FanPaymentMethod, Ticket, Bet]),
     TeamsModule,
   ],
   controllers: [FansController, MeFanController, MeFavoriteTeamsController],
