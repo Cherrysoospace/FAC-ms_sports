@@ -124,6 +124,17 @@ export class MatchesRepository {
     });
   }
 
+  // Anotaciones del partido ordenadas cronológicamente para resumen de resultado (sin N+1).
+  findGoalsForSummary(matchId: number): Promise<Goal[]> {
+    return this.goalRepository
+      .createQueryBuilder('goal')
+      .innerJoinAndSelect('goal.player', 'player')
+      .where('goal.match_id = :matchId', { matchId })
+      .orderBy('goal.minute', 'ASC')
+      .addOrderBy('goal.id', 'ASC')
+      .getMany();
+  }
+
   // Registros de seguimiento espacial (HU-GC-09): bloquean la eliminación.
   countPositions(matchId: number): Promise<number> {
     return this.positionRepository.count({ where: { match: { id: matchId } } });

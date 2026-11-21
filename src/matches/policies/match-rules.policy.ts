@@ -67,6 +67,17 @@ export class MatchRulesPolicy {
     }
   }
 
+  // HU-GC-11: el cierre o reapertura manual de apuestas solo aplica antes de iniciar el partido.
+  static assertBettingToggleAllowed(status: MatchStatus): void {
+    if (status !== MatchStatus.SCHEDULED) {
+      throw new ApplicationException(
+        ErrorCase.INVALID_OPERATION,
+        `El partido está ${MATCH_STATUS_LABELS[status]}: solo se pueden ` +
+          'abrir o cerrar apuestas en partidos programados',
+      );
+    }
+  }
+
   // El día del partido (hora local) debe estar dentro del periodo jugable.
   static assertWithinPeriod(scheduledAt: Date, period: PlayablePeriod): void {
     const day = toDateOnly(scheduledAt);

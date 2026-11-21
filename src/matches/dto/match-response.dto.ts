@@ -1,8 +1,10 @@
+import { TournamentStatus } from '../../tournaments/enums/tournament-status.enum';
 import { MatchStatus } from '../enums/match-status.enum';
 
 export class MatchTournamentDto {
   id!: number;
   name!: string;
+  status?: TournamentStatus;
 }
 
 export class MatchPhaseDto {

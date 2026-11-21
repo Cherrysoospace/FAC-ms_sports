@@ -29,6 +29,7 @@ import { TournamentVenuesService } from '../tournament-venues/tournament-venues.
 import { TournamentStatusPolicy } from '../tournaments/policies/tournament-status.policy';
 import {
   BET_SETTLEMENT_PORT,
+  type BetSettlementNotification,
   type IBetSettlementPort,
 } from '../common/contracts';
 import { joinList, plural } from '../common/text/spanish-list';
@@ -141,40 +142,75 @@ export class MatchesService {
       Object.assign(match, resolved);
     }
 
+    if (dto.bettingOpen !== undefined) {
+      MatchRulesPolicy.assertBettingToggleAllowed(match.status);
+      if (
+        (dto.status ?? match.status) !== MatchStatus.SCHEDULED &&
+        dto.bettingOpen
+      ) {
+        throw new ApplicationException(
+          ErrorCase.INVALID_OPERATION,
+          'No se pueden dejar las apuestas abiertas al iniciar o cancelar el partido',
+        );
+      }
+      if (
+        dto.bettingOpen &&
+        TournamentStatusPolicy.isClosed(match.phase.tournament.status)
+      ) {
+        throw new ApplicationException(
+          ErrorCase.INVALID_OPERATION,
+          `El torneo ${match.phase.tournament.name} ya terminó o fue cancelado: no se pueden reabrir apuestas`,
+        );
+      }
+      match.bettingOpen = dto.bettingOpen;
+    }
+
     if (dto.status !== undefined) {
       MatchRulesPolicy.assertTransition(match.status, dto.status);
       if (
         dto.status === MatchStatus.CANCELLED &&
         match.status !== MatchStatus.CANCELLED
       ) {
-        await this.dataSource.transaction(async (manager) => {
-          const locked = await manager.findOne(Match, {
-            where: { id },
-            lock: { mode: 'pessimistic_write' },
-          });
-          if (!locked) throw ResourceNotFoundException.of('Partido', id);
+        const pendingNotifications = await this.dataSource.transaction(
+          async (manager) => {
+            const locked = await manager.findOne(Match, {
+              where: { id },
+              lock: { mode: 'pessimistic_write' },
+            });
+            if (!locked) throw ResourceNotFoundException.of('Partido', id);
 
-          MatchRulesPolicy.assertTransition(locked.status, MatchStatus.CANCELLED);
-          if (changesData) {
-            MatchRulesPolicy.assertEditable(locked.status);
-            locked.homeTeam = match.homeTeam;
-            locked.awayTeam = match.awayTeam;
-            locked.venue = match.venue;
-            locked.ball = match.ball;
-            locked.scheduledAt = match.scheduledAt;
-          }
-          locked.status = MatchStatus.CANCELLED;
-          locked.bettingOpen = false;
-          await manager.save(Match, locked);
-
-          if (this.betSettlementPort) {
-            await this.betSettlementPort.cancelForMatch(
-              id,
-              'El partido fue cancelado',
-              manager,
+            MatchRulesPolicy.assertTransition(
+              locked.status,
+              MatchStatus.CANCELLED,
             );
-          }
-        });
+            if (changesData) {
+              MatchRulesPolicy.assertEditable(locked.status);
+              locked.homeTeam = match.homeTeam;
+              locked.awayTeam = match.awayTeam;
+              locked.venue = match.venue;
+              locked.ball = match.ball;
+              locked.scheduledAt = match.scheduledAt;
+            }
+            locked.status = MatchStatus.CANCELLED;
+            locked.bettingOpen = false;
+            await manager.save(Match, locked);
+
+            if (this.betSettlementPort) {
+              const settlement = await this.betSettlementPort.cancelForMatch(
+                id,
+                'El partido fue cancelado',
+                manager,
+              );
+              return settlement.pendingNotifications;
+            }
+            return [] as BetSettlementNotification[];
+          },
+        );
+        if (pendingNotifications.length > 0 && this.betSettlementPort) {
+          await this.betSettlementPort.notifySettlementBatch(
+            pendingNotifications,
+          );
+        }
         return this.findOne(id);
       }
       match.status = dto.status;
@@ -202,8 +238,8 @@ export class MatchesService {
       );
     }
 
-    const isFirstFinalization = await this.dataSource.transaction(
-      async (manager) => {
+    const { isFirstFinalization, pendingNotifications } =
+      await this.dataSource.transaction(async (manager) => {
         const locked = await manager.findOne(Match, {
           where: { id },
           lock: { mode: 'pessimistic_write' },
@@ -219,8 +255,9 @@ export class MatchesService {
         locked.bettingOpen = false;
         await manager.save(Match, locked);
 
+        let notifications: BetSettlementNotification[] = [];
         if (firstFinalization && this.betSettlementPort) {
-          await this.betSettlementPort.settleForMatch(
+          const settlement = await this.betSettlementPort.settleForMatch(
             {
               matchId: match.id,
               homeTeamId: match.homeTeam.id,
@@ -230,14 +267,26 @@ export class MatchesService {
             },
             manager,
           );
+          notifications = settlement.pendingNotifications;
         }
 
-        return firstFinalization;
-      },
-    );
+        return {
+          isFirstFinalization: firstFinalization,
+          pendingNotifications: notifications,
+        };
+      });
+
+    if (pendingNotifications.length > 0 && this.betSettlementPort) {
+      await this.betSettlementPort.notifySettlementBatch(pendingNotifications);
+    }
 
     const updated = await this.getMatchOrFail(id);
-    await this.matchNotifier.notifyMatchResult(updated, isFirstFinalization);
+    const goals = await this.matchesRepository.findGoalsForSummary(id);
+    await this.matchNotifier.notifyMatchResult(
+      updated,
+      isFirstFinalization,
+      goals,
+    );
     return MatchMapper.toResponseDto(updated);
   }
 

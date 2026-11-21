@@ -1,5 +1,11 @@
 import type { DataSource, EntityManager, Repository } from 'typeorm';
-import type { IBetSettlementPort } from '../common/contracts';
+import type {
+  BetSettlementNotification,
+  IBetSettlementPort,
+} from '../common/contracts';
+import { BetSelection } from '../bets/enums/bet-selection.enum';
+import { BetStatus } from '../bets/enums/bet-status.enum';
+import { Goal } from '../goals/entities/goal.entity';
 import { GroupPhase } from '../phases/entities/group-phase.entity';
 import { TournamentStatus } from '../tournaments/enums/tournament-status.enum';
 import type { BallsService } from '../balls/balls.service';
@@ -54,6 +60,7 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
   };
   const matchesRepository = {
     findOneWithRelations: jest.fn(),
+    findGoalsForSummary: jest.fn(async (): Promise<Goal[]> => []),
     countPositions: jest.fn(async () => 0),
     countGoals: jest.fn(async () => 0),
     countTickets: jest.fn(async () => 0),
@@ -73,7 +80,22 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
   };
   let settleForMatchMock: jest.Mock;
   let cancelForMatchMock: jest.Mock;
+  let notifySettlementBatchMock: jest.Mock;
   let betSettlementPort: IBetSettlementPort;
+  let events: string[];
+
+  const sampleSettlementNotifications: BetSettlementNotification[] = [
+    {
+      email: 'fan@uc.co',
+      matchLabel: 'Leones vs Tigres',
+      selection: BetSelection.HOME_WIN,
+      amount: 50000,
+      odds: 3,
+      finalStatus: BetStatus.WON,
+      payout: 150000,
+      note: 'Resultado oficial 2 - 1 (Gana local)',
+    },
+  ];
 
   const buildService = (withBetPort = true) =>
     new MatchesService(
@@ -90,28 +112,51 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
 
   beforeEach(() => {
     jest.clearAllMocks();
+    events = [];
     txManager = {
       findOne: jest.fn(),
       save: jest.fn(async (_entity: unknown, target: Match) => target),
     };
     dataSource = {
       transaction: jest.fn(
-        async (callback: (manager: EntityManager) => Promise<boolean>) =>
-          callback(txManager as unknown as EntityManager),
+        async <T>(callback: (manager: EntityManager) => Promise<T>) => {
+          const result = await callback(txManager as unknown as EntityManager);
+          events.push('tx:end');
+          return result;
+        },
       ),
     };
-    settleForMatchMock = jest.fn(async () => ({
-      matchId: 10,
-      settledCount: 2,
-      wonCount: 1,
-      lostCount: 1,
-      voidedCount: 0,
-      totalPayout: 150000,
-    }));
-    cancelForMatchMock = jest.fn();
+    settleForMatchMock = jest.fn(async () => {
+      events.push('tx:settle');
+      return {
+        matchId: 10,
+        settledCount: 2,
+        wonCount: 1,
+        lostCount: 1,
+        voidedCount: 0,
+        totalPayout: 150000,
+        pendingNotifications: sampleSettlementNotifications,
+      };
+    });
+    cancelForMatchMock = jest.fn(async () => {
+      events.push('tx:cancel');
+      return {
+        matchId: 10,
+        settledCount: 0,
+        wonCount: 0,
+        lostCount: 0,
+        voidedCount: 0,
+        totalPayout: 0,
+        pendingNotifications: [],
+      };
+    });
+    notifySettlementBatchMock = jest.fn(async () => {
+      events.push('notify:batch');
+    });
     betSettlementPort = {
       settleForMatch: settleForMatchMock,
       cancelForMatch: cancelForMatchMock,
+      notifySettlementBatch: notifySettlementBatchMock,
     };
   });
 
@@ -129,9 +174,19 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
         bettingOpen: false,
       });
 
+      const summaryGoals = [
+        Object.assign(new Goal(), {
+          id: 5,
+          minute: 18,
+          points: 1,
+          description: 'Cabezazo',
+          player: { fullName: 'Carlos Pérez' },
+        }),
+      ];
       matchesRepository.findOneWithRelations
         .mockResolvedValueOnce(inProgress)
         .mockResolvedValueOnce(finished);
+      matchesRepository.findGoalsForSummary.mockResolvedValueOnce(summaryGoals);
       txManager.findOne.mockResolvedValueOnce(locked);
 
       const service = buildService(true);
@@ -158,9 +213,15 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
         },
         txManager,
       );
+      expect(notifySettlementBatchMock).toHaveBeenCalledWith(
+        sampleSettlementNotifications,
+      );
+      expect(events).toEqual(['tx:settle', 'tx:end', 'notify:batch']);
+      expect(matchesRepository.findGoalsForSummary).toHaveBeenCalledWith(10);
       expect(matchNotifier.notifyMatchResult).toHaveBeenCalledWith(
         finished,
         true,
+        summaryGoals,
       );
       expect(result).toMatchObject({
         id: 10,
@@ -202,6 +263,7 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
       expect(matchNotifier.notifyMatchResult).toHaveBeenCalledWith(
         corrected,
         false,
+        [],
       );
       expect(result.homeScore).toBe(2);
     });
@@ -227,6 +289,7 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
       expect(matchNotifier.notifyMatchResult).toHaveBeenCalledWith(
         finished,
         true,
+        [],
       );
     });
 
@@ -328,7 +391,7 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
   });
 
   describe('cancelación en update (HU-GC-11)', () => {
-    it('bloquea el partido, cierra apuestas y anula apuestas pendientes en la misma transacción', async () => {
+    it('bloquea el partido, cierra apuestas y anula apuestas en la transacción y notifica después', async () => {
       const scheduled = createMatchEntity({
         status: MatchStatus.SCHEDULED,
         bettingOpen: true,
@@ -340,6 +403,27 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
       const cancelled = createMatchEntity({
         status: MatchStatus.CANCELLED,
         bettingOpen: false,
+      });
+      const cancelNotifications: BetSettlementNotification[] = [
+        {
+          ...sampleSettlementNotifications[0],
+          finalStatus: BetStatus.VOID,
+          payout: 50000,
+          note: 'El partido fue cancelado',
+        },
+      ];
+
+      cancelForMatchMock.mockImplementationOnce(async () => {
+        events.push('tx:cancel');
+        return {
+          matchId: 10,
+          settledCount: 1,
+          wonCount: 0,
+          lostCount: 0,
+          voidedCount: 1,
+          totalPayout: 50000,
+          pendingNotifications: cancelNotifications,
+        };
       });
 
       matchesRepository.findOneWithRelations
@@ -361,7 +445,94 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
         'El partido fue cancelado',
         txManager,
       );
+      expect(notifySettlementBatchMock).toHaveBeenCalledWith(
+        cancelNotifications,
+      );
+      expect(events).toEqual(['tx:cancel', 'tx:end', 'notify:batch']);
       expect(result.status).toBe(MatchStatus.CANCELLED);
+    });
+  });
+
+  describe('cierre y reapertura manual de apuestas (bettingOpen)', () => {
+    it('permite cerrar y reabrir apuestas manualmente cuando el partido está SCHEDULED', async () => {
+      const scheduledOpen = createMatchEntity({
+        status: MatchStatus.SCHEDULED,
+        bettingOpen: true,
+      });
+      const savedClosed = createMatchEntity({
+        status: MatchStatus.SCHEDULED,
+        bettingOpen: false,
+      });
+      matchesRepository.findOneWithRelations
+        .mockResolvedValueOnce(scheduledOpen)
+        .mockResolvedValueOnce(savedClosed);
+
+      const service = buildService(true);
+      const closed = await service.update(10, { bettingOpen: false });
+
+      expect(matchRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ bettingOpen: false }),
+      );
+      expect(closed.bettingOpen).toBe(false);
+
+      const scheduledClosed = createMatchEntity({
+        status: MatchStatus.SCHEDULED,
+        bettingOpen: false,
+      });
+      const savedOpen = createMatchEntity({
+        status: MatchStatus.SCHEDULED,
+        bettingOpen: true,
+      });
+      matchesRepository.findOneWithRelations
+        .mockResolvedValueOnce(scheduledClosed)
+        .mockResolvedValueOnce(savedOpen);
+
+      const reopened = await service.update(10, { bettingOpen: true });
+
+      expect(matchRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ bettingOpen: true }),
+      );
+      expect(reopened.bettingOpen).toBe(true);
+    });
+
+    it('rechaza cambiar bettingOpen si el partido no está SCHEDULED, si intenta abrirlo al iniciar o en torneo cerrado', async () => {
+      const service = buildService(true);
+
+      matchesRepository.findOneWithRelations.mockResolvedValueOnce(
+        createMatchEntity({ status: MatchStatus.IN_PROGRESS }),
+      );
+      await expect(service.update(10, { bettingOpen: true })).rejects.toThrow(
+        'partidos programados',
+      );
+
+      matchesRepository.findOneWithRelations.mockResolvedValueOnce(
+        createMatchEntity({ status: MatchStatus.FINISHED }),
+      );
+      await expect(service.update(10, { bettingOpen: false })).rejects.toThrow(
+        'partidos programados',
+      );
+
+      matchesRepository.findOneWithRelations.mockResolvedValueOnce(
+        createMatchEntity({ status: MatchStatus.SCHEDULED, bettingOpen: true }),
+      );
+      await expect(
+        service.update(10, {
+          status: MatchStatus.IN_PROGRESS,
+          bettingOpen: true,
+        }),
+      ).rejects.toThrow('dejar las apuestas abiertas');
+
+      matchesRepository.findOneWithRelations.mockResolvedValueOnce(
+        createMatchEntity({
+          status: MatchStatus.SCHEDULED,
+          bettingOpen: false,
+          tournamentStatus: TournamentStatus.FINISHED,
+        }),
+      );
+      await expect(service.update(10, { bettingOpen: true })).rejects.toThrow(
+        'ya terminó o fue cancelado',
+      );
+      expect(matchRepository.save).not.toHaveBeenCalled();
     });
   });
 });

@@ -27,7 +27,9 @@ function createMatch(): Match {
 
 describe('MatchNotifier', () => {
   const notificationsService = {
-    notify: jest.fn(async () => 1),
+    notify: jest.fn(
+      async (_input: { to: string[]; subject: string; body: string }) => 1,
+    ),
   };
   let findEmailsForNewMatch: jest.Mock;
   let findEmailsForMatchUpdate: jest.Mock;
@@ -74,10 +76,12 @@ describe('MatchNotifier', () => {
     findEmailsForMatchUpdate.mockResolvedValue(['fan@correo.com']);
 
     await notifier.notifyMatchResult(createMatch(), true);
-    expect(notificationsService.notify).toHaveBeenCalledWith(
+    expect(notificationsService.notify).toHaveBeenNthCalledWith(
+      1,
       expect.objectContaining({
         to: ['fan@correo.com'],
         subject: 'Resultado final: Leones 2 - 1 Tigres',
+        body: expect.not.stringContaining('Anotaciones:'),
       }),
     );
 
@@ -88,6 +92,20 @@ describe('MatchNotifier', () => {
       description: 'Gol de tiro libre',
       player: { fullName: 'Carlos Pérez' },
     });
+    const secondGoal = Object.assign(new Goal(), {
+      id: 10,
+      minute: 88,
+      points: 2,
+      description: null,
+      player: { fullName: 'Luis Mora' },
+    });
+
+    await notifier.notifyMatchResult(createMatch(), true, [goal, secondGoal]);
+    const summaryCall = notificationsService.notify.mock.calls[1]?.[0];
+    expect(summaryCall?.body).toContain('Anotaciones:');
+    expect(summaryCall?.body).toContain("- 42' Carlos Pérez - Gol de tiro libre");
+    expect(summaryCall?.body).toContain("- 88' Luis Mora (2 pts)");
+
     await notifier.notifyGoalRecorded(createMatch(), goal);
     expect(notificationsService.notify).toHaveBeenCalledWith(
       expect.objectContaining({

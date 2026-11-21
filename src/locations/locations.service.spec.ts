@@ -32,8 +32,8 @@ describe('LocationsService (control de aforo y borrado con boletos)', () => {
     getVenueOrFail: jest.fn(),
   };
   const ticketCapacityPort: jest.Mocked<ITicketCapacityPort> = {
-    countByLocationId: jest.fn(async () => 0),
-    maxSoldPerMatchByLocationId: jest.fn(async () => 0),
+    countByLocationId: jest.fn(async (_locationId: number) => 0),
+    maxSoldPerMatchByLocationId: jest.fn(async (_locationId: number) => 0),
   };
 
   beforeEach(() => {

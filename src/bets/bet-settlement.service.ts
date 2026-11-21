@@ -1,14 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
 import type {
+  BetSettlementNotification,
   BetSettlementSummary,
   IBetSettlementPort,
   MatchSettlementInput,
 } from '../common/contracts';
-import {
-  BetNotifier,
-  type BetSettlementNotificationItem,
-} from './bet-notifier';
+import { BetNotifier } from './bet-notifier';
 import { BetStatus } from './enums/bet-status.enum';
 import {
   BET_SELECTION_LABELS,
@@ -64,7 +62,7 @@ export class BetSettlementService implements IBetSettlementPort {
     let wonCount = 0;
     let lostCount = 0;
     let totalPayout = 0;
-    const notifications: BetSettlementNotificationItem[] = [];
+    const notifications: BetSettlementNotification[] = [];
 
     for (const bet of pendingBets) {
       const amount = Number(bet.amount);
@@ -92,8 +90,6 @@ export class BetSettlementService implements IBetSettlementPort {
       });
     }
 
-    await this.betNotifier.notifySettlementBatch(notifications);
-
     return {
       matchId: input.matchId,
       settledCount: affected,
@@ -101,6 +97,7 @@ export class BetSettlementService implements IBetSettlementPort {
       lostCount,
       voidedCount: 0,
       totalPayout: BetRulesPolicy.roundCurrency(totalPayout),
+      pendingNotifications: notifications,
     };
   }
 
@@ -133,7 +130,7 @@ export class BetSettlementService implements IBetSettlementPort {
     }
 
     let totalPayout = 0;
-    const notifications: BetSettlementNotificationItem[] = [];
+    const notifications: BetSettlementNotification[] = [];
 
     for (const bet of pendingBets) {
       const amount = Number(bet.amount);
@@ -157,8 +154,6 @@ export class BetSettlementService implements IBetSettlementPort {
       });
     }
 
-    await this.betNotifier.notifySettlementBatch(notifications);
-
     return {
       matchId,
       settledCount: affected,
@@ -166,7 +161,14 @@ export class BetSettlementService implements IBetSettlementPort {
       lostCount: 0,
       voidedCount: affected,
       totalPayout: BetRulesPolicy.roundCurrency(totalPayout),
+      pendingNotifications: notifications,
     };
+  }
+
+  async notifySettlementBatch(
+    notifications: readonly BetSettlementNotification[],
+  ): Promise<void> {
+    await this.betNotifier.notifySettlementBatch(notifications);
   }
 
   private emptySummary(matchId: number): BetSettlementSummary {
@@ -177,6 +179,7 @@ export class BetSettlementService implements IBetSettlementPort {
       lostCount: 0,
       voidedCount: 0,
       totalPayout: 0,
+      pendingNotifications: [],
     };
   }
 }

@@ -55,7 +55,7 @@ describe('BetSettlementService', () => {
     );
   });
 
-  it('liquida apuestas en lote usando la cuota fija almacenada y notifica al aficionado', async () => {
+  it('liquida apuestas en lote usando la cuota fija almacenada y retorna notificaciones sin enviarlas aún', async () => {
     const pending = [
       createPendingBet(1, BetSelection.HOME_WIN, '20000.00', '2.10', 'a@uc.co'),
       createPendingBet(2, BetSelection.DRAW, '15000.00', '3.00', 'b@uc.co'),
@@ -81,6 +81,7 @@ describe('BetSettlementService', () => {
       'Resultado oficial 2 - 1 (Gana local)',
       manager,
     );
+    expect(betNotifier.notifySettlementBatch).not.toHaveBeenCalled();
     expect(summary).toEqual({
       matchId: 10,
       settledCount: 2,
@@ -88,22 +89,22 @@ describe('BetSettlementService', () => {
       lostCount: 1,
       voidedCount: 0,
       totalPayout: 42000,
+      pendingNotifications: [
+        expect.objectContaining({
+          email: 'a@uc.co',
+          finalStatus: BetStatus.WON,
+          payout: 42000,
+        }),
+        expect.objectContaining({
+          email: 'b@uc.co',
+          finalStatus: BetStatus.LOST,
+          payout: 0,
+        }),
+      ],
     });
-    expect(betNotifier.notifySettlementBatch).toHaveBeenCalledWith([
-      expect.objectContaining({
-        email: 'a@uc.co',
-        finalStatus: BetStatus.WON,
-        payout: 42000,
-      }),
-      expect.objectContaining({
-        email: 'b@uc.co',
-        finalStatus: BetStatus.LOST,
-        payout: 0,
-      }),
-    ]);
   });
 
-  it('no actualiza ni notifica si no hay apuestas pendientes o si ya fueron liquidadas', async () => {
+  it('no actualiza ni retorna notificaciones si no hay apuestas pendientes o si ya fueron liquidadas', async () => {
     betsRepository.findPendingByMatchForSettlement.mockResolvedValueOnce([]);
 
     const empty = await service.settleForMatch(
@@ -124,6 +125,7 @@ describe('BetSettlementService', () => {
       lostCount: 0,
       voidedCount: 0,
       totalPayout: 0,
+      pendingNotifications: [],
     });
     expect(betsRepository.settlePendingByMatch).not.toHaveBeenCalled();
     expect(betNotifier.notifySettlementBatch).not.toHaveBeenCalled();
@@ -144,10 +146,11 @@ describe('BetSettlementService', () => {
       manager,
     );
     expect(concurrent.settledCount).toBe(0);
+    expect(concurrent.pendingNotifications).toEqual([]);
     expect(betNotifier.notifySettlementBatch).not.toHaveBeenCalled();
   });
 
-  it('anula apuestas pendientes devolviendo el valor apostado al cancelar el partido', async () => {
+  it('anula apuestas pendientes devolviendo el valor apostado y retorna notificaciones pendientes', async () => {
     const pending = [
       createPendingBet(1, BetSelection.AWAY_WIN, '30000.00', '2.80', 'a@uc.co'),
       createPendingBet(2, BetSelection.HOME_WIN, '10000.00', '1.90', 'b@uc.co'),
@@ -167,6 +170,7 @@ describe('BetSettlementService', () => {
       'El partido fue cancelado',
       manager,
     );
+    expect(betNotifier.notifySettlementBatch).not.toHaveBeenCalled();
     expect(summary).toEqual({
       matchId: 10,
       settledCount: 2,
@@ -174,19 +178,40 @@ describe('BetSettlementService', () => {
       lostCount: 0,
       voidedCount: 2,
       totalPayout: 40000,
+      pendingNotifications: [
+        expect.objectContaining({
+          email: 'a@uc.co',
+          finalStatus: BetStatus.VOID,
+          payout: 30000,
+        }),
+        expect.objectContaining({
+          email: 'b@uc.co',
+          finalStatus: BetStatus.VOID,
+          payout: 10000,
+        }),
+      ],
     });
-    expect(betNotifier.notifySettlementBatch).toHaveBeenCalledWith([
-      expect.objectContaining({
+  });
+
+  it('envía el lote de notificaciones fuera de la transacción cuando se invoca notifySettlementBatch', async () => {
+    const notifications = [
+      {
         email: 'a@uc.co',
-        finalStatus: BetStatus.VOID,
-        payout: 30000,
-      }),
-      expect.objectContaining({
-        email: 'b@uc.co',
-        finalStatus: BetStatus.VOID,
-        payout: 10000,
-      }),
-    ]);
+        matchLabel: 'Leones vs Tigres',
+        selection: BetSelection.HOME_WIN,
+        amount: 20000,
+        odds: 2.1,
+        finalStatus: BetStatus.WON,
+        payout: 42000,
+        note: 'Resultado oficial 2 - 1 (Gana local)',
+      },
+    ];
+
+    await service.notifySettlementBatch(notifications);
+
+    expect(betNotifier.notifySettlementBatch).toHaveBeenCalledWith(
+      notifications,
+    );
   });
 });
 

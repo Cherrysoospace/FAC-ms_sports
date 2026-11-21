@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsISO8601, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsISO8601, Min } from 'class-validator';
 import { MatchStatus } from '../enums/match-status.enum';
 import { NotNullIfPresent } from '../../common/validation';
 
@@ -45,4 +45,8 @@ export class UpdateMatchDto {
   @NotNullIfPresent()
   @IsEnum(MatchStatus, { message: MATCH_STATUS_MESSAGE })
   status?: MatchStatus;
+
+  @NotNullIfPresent()
+  @IsBoolean({ message: 'bettingOpen debe ser true o false' })
+  bettingOpen?: boolean;
 }

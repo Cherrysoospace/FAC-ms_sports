@@ -63,7 +63,11 @@ export class MatchMapper {
     dto.name = phase.name;
     dto.type = phase instanceof GroupPhase ? 'GROUP' : 'FINAL';
     dto.label = MatchMapper.phaseLabel(phase);
-    dto.tournament = { id: phase.tournament.id, name: phase.tournament.name };
+    dto.tournament = {
+      id: phase.tournament.id,
+      name: phase.tournament.name,
+      status: phase.tournament.status,
+    };
     return dto;
   }
 

@@ -48,6 +48,21 @@ describe('MatchRulesPolicy', () => {
     ).toThrow();
   });
 
+  it('solo permite abrir o cerrar apuestas manualmente en partidos programados', () => {
+    expect(() =>
+      MatchRulesPolicy.assertBettingToggleAllowed(MatchStatus.SCHEDULED),
+    ).not.toThrow();
+    expect(() =>
+      MatchRulesPolicy.assertBettingToggleAllowed(MatchStatus.IN_PROGRESS),
+    ).toThrow('partidos programados');
+    expect(() =>
+      MatchRulesPolicy.assertBettingToggleAllowed(MatchStatus.FINISHED),
+    ).toThrow('partidos programados');
+    expect(() =>
+      MatchRulesPolicy.assertBettingToggleAllowed(MatchStatus.CANCELLED),
+    ).toThrow('partidos programados');
+  });
+
   it('valida la fecha dentro del periodo', () => {
     const period = {
       startDate: '2027-02-01',

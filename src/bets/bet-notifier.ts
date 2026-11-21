@@ -1,24 +1,14 @@
 import { Injectable } from '@nestjs/common';
+import type { BetSettlementNotification } from '../common/contracts';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Bet } from './entities/bet.entity';
-import { BetSelection } from './enums/bet-selection.enum';
-import { BetStatus } from './enums/bet-status.enum';
 import {
   BET_SELECTION_LABELS,
   BET_STATUS_LABELS,
   BetRulesPolicy,
 } from './policies/bet-rules.policy';
 
-export interface BetSettlementNotificationItem {
-  email: string;
-  matchLabel: string;
-  selection: BetSelection;
-  amount: number;
-  odds: number;
-  finalStatus: BetStatus;
-  payout: number;
-  note: string;
-}
+export type BetSettlementNotificationItem = BetSettlementNotification;
 
 /**
  * HU-GC-11: notificaciones por correo al registrar, cancelar o liquidar apuestas.

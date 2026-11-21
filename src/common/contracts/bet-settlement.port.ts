@@ -1,4 +1,6 @@
 import type { EntityManager } from 'typeorm';
+import type { BetSelection } from '../../bets/enums/bet-selection.enum';
+import type { BetStatus } from '../../bets/enums/bet-status.enum';
 
 /**
  * Token de inyección para desacoplar `matches` de la implementación de liquidación
@@ -18,6 +20,20 @@ export interface MatchSettlementInput {
 }
 
 /**
+ * Correo de liquidación pendiente de enviarse fuera de la transacción SQL.
+ */
+export interface BetSettlementNotification {
+  email: string;
+  matchLabel: string;
+  selection: BetSelection;
+  amount: number;
+  odds: number;
+  finalStatus: BetStatus;
+  payout: number;
+  note: string;
+}
+
+/**
  * Resumen devuelto tras liquidar o anular en lote las apuestas de un partido.
  */
 export interface BetSettlementSummary {
@@ -27,6 +43,7 @@ export interface BetSettlementSummary {
   lostCount: number;
   voidedCount: number;
   totalPayout: number;
+  pendingNotifications: BetSettlementNotification[];
 }
 
 /**
@@ -44,5 +61,9 @@ export interface IBetSettlementPort {
     reason?: string,
     manager?: EntityManager,
   ): Promise<BetSettlementSummary>;
+
+  notifySettlementBatch(
+    notifications: readonly BetSettlementNotification[],
+  ): Promise<void>;
 }
 

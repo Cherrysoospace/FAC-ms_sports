@@ -52,6 +52,7 @@ export class MatchNotifier {
   async notifyMatchResult(
     match: Match,
     isFirstFinalization: boolean,
+    goals: readonly Goal[] = match.goals ?? [],
   ): Promise<void> {
     const recipients = await this.findFansOfMatch(match);
     if (recipients.length === 0) {
@@ -67,6 +68,7 @@ export class MatchNotifier {
     const prefix = isFirstFinalization
       ? 'Resultado final'
       : 'Resultado actualizado';
+    const goalsSection = this.formatGoalsSummary(goals);
 
     await this.notificationsService.notify({
       to: recipients,
@@ -75,7 +77,7 @@ export class MatchNotifier {
         `${prefix} de ${phase.tournament.name} (${MatchMapper.phaseLabel(phase)}).\n\n` +
         `${homeTeam.name} ${homeScore} - ${awayScore} ${awayTeam.name}\n` +
         `Fecha: ${match.scheduledAt.toLocaleString('es-CO', { dateStyle: 'full', timeStyle: 'short' })}\n` +
-        `Escenario: ${venue.name}\n\n` +
+        `Escenario: ${venue.name}${goalsSection}\n\n` +
         'Recibes este correo porque compraste boleto, realizaste una apuesta o sigues como favorito a uno de los equipos.',
     });
   }
@@ -103,6 +105,16 @@ export class MatchNotifier {
         `Minuto: ${goal.minute}' | Puntos: ${goal.points}${detail}\n\n` +
         'Recibes este correo porque compraste boleto, realizaste una apuesta o sigues como favorito a uno de los equipos.',
     });
+  }
+
+  private formatGoalsSummary(goals: readonly Goal[]): string {
+    if (goals.length === 0) return '';
+    const lines = goals.map((goal) => {
+      const points = goal.points > 1 ? ` (${goal.points} pts)` : '';
+      const detail = goal.description ? ` - ${goal.description}` : '';
+      return `- ${goal.minute}' ${goal.player.fullName}${points}${detail}`;
+    });
+    return `\n\nAnotaciones:\n${lines.join('\n')}`;
   }
 
   /**
