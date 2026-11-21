@@ -4,6 +4,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -11,6 +12,7 @@ import { Phase } from '../../phases/entities/phase.entity';
 import { Venue } from '../../venues/entities/venue.entity';
 import { Team } from '../../teams/entities/team.entity';
 import { Ball } from '../../balls/entities/ball.entity';
+import { Goal } from '../../goals/entities/goal.entity';
 import { MatchStatus } from '../enums/match-status.enum';
 
 @Entity('matches')
@@ -80,4 +82,8 @@ export class Match {
   })
   @JoinColumn({ name: 'ball_id' })
   ball!: Ball;
+
+  // Partido 1 — n Anotación (diagrama, R21)
+  @OneToMany(() => Goal, (goal) => goal.match, { cascade: false })
+  goals?: Goal[];
 }

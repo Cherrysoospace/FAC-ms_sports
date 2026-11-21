@@ -9,6 +9,7 @@ import { DominantFoot } from '../enums/dominant-foot.enum';
 import { TeamPlayer } from '../../team-players/entities/team-player.entity';
 import { PlayerSkill } from '../../player-skills/entities/player-skill.entity';
 import { MatchPosition } from '../../match-positions/entities/match-position.entity';
+import { Goal } from '../../goals/entities/goal.entity';
 
 @Entity('players')
 @Unique('UQ_players_document_number', ['documentNumber'])
@@ -66,4 +67,8 @@ export class Player {
     cascade: false,
   })
   positions?: MatchPosition[];
+
+  // Jugador 1 — n Anotación (diagrama, R22)
+  @OneToMany(() => Goal, (goal) => goal.player, { cascade: false })
+  goals?: Goal[];
 }
