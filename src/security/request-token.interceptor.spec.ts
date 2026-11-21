@@ -24,7 +24,7 @@ class TokenEchoService {
 
 @Controller('test-token')
 class TokenEchoController {
-  constructor(private readonly service: TokenEchoService) {}
+  constructor(private readonly service: TokenEchoService) { }
 
   @Get()
   async getToken() {
