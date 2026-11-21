@@ -26,7 +26,7 @@ export class FansService {
     private readonly fanRepository: Repository<Fan>,
     private readonly fansRepository: FansRepository,
     private readonly fanMapper: FanMapper,
-  ) {}
+  ) { }
 
   async findAll(query: FanQueryDto): Promise<FanResponseDto[]> {
     const fans = await this.fansRepository.findByFilters(query);
@@ -60,7 +60,7 @@ export class FansService {
       {
         documentNumber:
           dto.documentNumber !== undefined &&
-          dto.documentNumber !== fan.documentNumber
+            dto.documentNumber !== fan.documentNumber
             ? dto.documentNumber
             : undefined,
         email:
@@ -77,23 +77,25 @@ export class FansService {
 
   async remove(id: number): Promise<{ message: string }> {
     const fan = await this.getFanOrFail(id);
-    const [favoriteTeams, paymentMethods] = await Promise.all([
+    const [favoriteTeams, paymentMethods, tickets] = await Promise.all([
       this.fansRepository.countFavoriteTeams(id),
       this.fansRepository.countPaymentMethods(id),
+      this.fansRepository.countTickets(id),
     ]);
 
     const dependencies = [
       plural(favoriteTeams, 'equipo favorito', 'equipos favoritos'),
       plural(paymentMethods, 'método de pago', 'métodos de pago'),
+      plural(tickets, 'boleto', 'boletos'),
     ].filter((dependency): dependency is string => dependency !== null);
 
     if (dependencies.length > 0) {
       throw new BusinessRuleException(
         `No se puede eliminar el aficionado porque tiene ${joinList(dependencies)} ` +
-          'asociados. Desactívelo con PATCH { "active": false }',
+        'asociados. Desactívelo con PATCH { "active": false }',
       );
     }
-    // TODO (Fercho): bloquear también si tiene boletos o apuestas.
+    // TODO (Fercho): bloquear también si tiene apuestas.
 
     await this.fanRepository.remove(fan);
     return { message: `Aficionado #${id} eliminado correctamente` };
@@ -146,7 +148,7 @@ export class FansService {
       {
         documentNumber:
           dto.documentNumber !== undefined &&
-          dto.documentNumber !== fan.documentNumber
+            dto.documentNumber !== fan.documentNumber
             ? dto.documentNumber
             : undefined,
         email:
@@ -212,9 +214,9 @@ export class FansService {
         : Promise.resolve(null),
       fields.documentNumber !== undefined
         ? this.fansRepository.findByDocumentNumber(
-            fields.documentNumber,
-            excludeId,
-          )
+          fields.documentNumber,
+          excludeId,
+        )
         : Promise.resolve(null),
       fields.email !== undefined
         ? this.fansRepository.findByEmailIgnoringCase(fields.email, excludeId)

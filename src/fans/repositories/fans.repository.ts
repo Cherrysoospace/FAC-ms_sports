@@ -9,6 +9,7 @@ import {
 import { Fan } from '../entities/fan.entity';
 import { FanTeam } from '../entities/fan-team.entity';
 import { FanPaymentMethod } from '../../payment-methods/entities/fan-payment-method.entity';
+import { Ticket } from '../../tickets/entities/ticket.entity';
 
 export interface FanFilters {
   search?: string;
@@ -27,7 +28,9 @@ export class FansRepository {
     private readonly fanTeamRepository: Repository<FanTeam>,
     @InjectRepository(FanPaymentMethod)
     private readonly fanPaymentMethodRepository: Repository<FanPaymentMethod>,
-  ) {}
+    @InjectRepository(Ticket)
+    private readonly ticketRepository: Repository<Ticket>,
+  ) { }
 
   findByFilters(filters: FanFilters): Promise<Fan[]> {
     const qb = this.fanRepository
@@ -42,8 +45,8 @@ export class FansRepository {
       const term = `%${escapeLike(filters.search.trim().toLowerCase())}%`;
       qb.andWhere(
         "(LOWER(fan.fullName) LIKE :term ESCAPE '\\\\' " +
-          "OR LOWER(fan.email) LIKE :term ESCAPE '\\\\' " +
-          "OR LOWER(fan.documentNumber) LIKE :term ESCAPE '\\\\')",
+        "OR LOWER(fan.email) LIKE :term ESCAPE '\\\\' " +
+        "OR LOWER(fan.documentNumber) LIKE :term ESCAPE '\\\\')",
         { term },
       );
     }
@@ -93,6 +96,12 @@ export class FansRepository {
 
   countPaymentMethods(fanId: number): Promise<number> {
     return this.fanPaymentMethodRepository.count({
+      where: { fan: { id: fanId } },
+    });
+  }
+
+  countTickets(fanId: number): Promise<number> {
+    return this.ticketRepository.count({
       where: { fan: { id: fanId } },
     });
   }
