@@ -11,6 +11,7 @@ import { TournamentStatus } from '../tournaments/enums/tournament-status.enum';
 import { Match } from './entities/match.entity';
 import { MatchStatus } from './enums/match-status.enum';
 import type { MatchNotifier } from './match-notifier';
+import { MatchLifecycleEvents } from './match-lifecycle.events';
 import { MatchesService } from './matches.service';
 import type { MatchesRepository } from './repositories/matches.repository';
 import type { MatchDraftResolver } from './services/match-draft.resolver';
@@ -68,6 +69,7 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
     notifyNewMatch: jest.fn(async () => undefined),
     notifyMatchResult: jest.fn(async () => undefined),
   };
+  const lifecycle = new MatchLifecycleEvents();
 
   let txManager: {
     findOne: jest.Mock;
@@ -112,6 +114,7 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
       {} as MatchDraftResolver,
       buildResultService(withBetPort),
       matchNotifier as unknown as MatchNotifier,
+      lifecycle,
     );
 
   beforeEach(() => {
@@ -539,6 +542,43 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
         'ya terminó o fue cancelado',
       );
       expect(matchRepository.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('aviso de partido iniciado (simulador de la pizarra)', () => {
+    it('avisa una sola vez, después de guardar, cuando el partido pasa a IN_PROGRESS', async () => {
+      const notifyStarted = jest.spyOn(lifecycle, 'notifyStarted');
+      matchesRepository.findOneWithRelations
+        .mockResolvedValueOnce(
+          createMatchEntity({ status: MatchStatus.SCHEDULED }),
+        )
+        .mockResolvedValueOnce(createMatchEntity());
+
+      await buildService(true).update(10, { status: MatchStatus.IN_PROGRESS });
+
+      expect(matchRepository.save).toHaveBeenCalled();
+      expect(notifyStarted).toHaveBeenCalledTimes(1);
+      expect(notifyStarted).toHaveBeenCalledWith(10);
+      notifyStarted.mockRestore();
+    });
+
+    it('no avisa si solo cambian las apuestas', async () => {
+      const notifyStarted = jest.spyOn(lifecycle, 'notifyStarted');
+      matchesRepository.findOneWithRelations
+        .mockResolvedValueOnce(
+          createMatchEntity({
+            status: MatchStatus.SCHEDULED,
+            bettingOpen: true,
+          }),
+        )
+        .mockResolvedValueOnce(
+          createMatchEntity({ status: MatchStatus.SCHEDULED }),
+        );
+
+      await buildService(true).update(10, { bettingOpen: false });
+
+      expect(notifyStarted).not.toHaveBeenCalled();
+      notifyStarted.mockRestore();
     });
   });
 });

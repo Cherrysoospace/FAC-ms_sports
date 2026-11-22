@@ -19,6 +19,7 @@ import { MatchesService } from './matches.service';
 import { MatchesRepository } from './repositories/matches.repository';
 import { MatchAudienceRepository } from './repositories/match-audience.repository';
 import { MatchNotifier } from './match-notifier';
+import { MatchLifecycleEvents } from './match-lifecycle.events';
 import { MatchDraftResolver } from './services/match-draft.resolver';
 import { MatchResultService } from './services/match-result.service';
 
@@ -52,8 +53,10 @@ import { MatchResultService } from './services/match-result.service';
       useExisting: MatchAudienceRepository,
     },
     MatchNotifier,
+    MatchLifecycleEvents,
   ],
-  // Lo usan los módulos de Fercho (getMatchOrFail y MatchNotifier).
-  exports: [MatchesService, MatchNotifier],
+  // Lo usan los módulos de Fercho (getMatchOrFail y MatchNotifier) y el
+  // simulador de posiciones (MatchLifecycleEvents).
+  exports: [MatchesService, MatchNotifier, MatchLifecycleEvents],
 })
 export class MatchesModule {}

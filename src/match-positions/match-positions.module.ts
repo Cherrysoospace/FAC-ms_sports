@@ -6,6 +6,7 @@ import { TeamPlayersModule } from '../team-players/team-players.module';
 import { MatchPositionsController } from './match-positions.controller';
 import { MatchPositionsService } from './match-positions.service';
 import { MatchPositionsRepository } from './repositories/match-positions.repository';
+import { PositionSimulator } from './simulation/position-simulator';
 
 @Module({
   imports: [
@@ -14,6 +15,11 @@ import { MatchPositionsRepository } from './repositories/match-positions.reposit
     TeamPlayersModule,
   ],
   controllers: [MatchPositionsController],
-  providers: [MatchPositionsService, MatchPositionsRepository],
+  // PositionSimulator solo actúa con SIMULATE_POSITIONS=true (desarrollo/demo)
+  providers: [
+    MatchPositionsService,
+    MatchPositionsRepository,
+    PositionSimulator,
+  ],
 })
 export class MatchPositionsModule {}

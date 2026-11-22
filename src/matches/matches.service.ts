@@ -9,6 +9,7 @@ import {
 } from './repositories/matches.repository';
 import { MatchMapper } from './mappers/match.mapper';
 import { MatchNotifier } from './match-notifier';
+import { MatchLifecycleEvents } from './match-lifecycle.events';
 import { MatchRulesPolicy } from './policies/match-rules.policy';
 import { MatchDraftPolicy } from './policies/match-draft.policy';
 import { MatchDraftResolver } from './services/match-draft.resolver';
@@ -38,6 +39,7 @@ export class MatchesService {
     private readonly matchDraftResolver: MatchDraftResolver,
     private readonly matchResultService: MatchResultService,
     private readonly matchNotifier: MatchNotifier,
+    private readonly lifecycle: MatchLifecycleEvents,
   ) {}
 
   async findAll(query: MatchQueryDto): Promise<MatchResponseDto[]> {
@@ -100,6 +102,10 @@ export class MatchesService {
       match.bettingOpen = dto.bettingOpen;
     }
 
+    const starts =
+      dto.status === MatchStatus.IN_PROGRESS &&
+      match.status !== MatchStatus.IN_PROGRESS;
+
     if (dto.status !== undefined) {
       MatchRulesPolicy.assertTransition(match.status, dto.status);
       if (
@@ -115,6 +121,8 @@ export class MatchesService {
     }
 
     await this.matchRepository.save(match);
+    // Avisa después de guardar: quien escuche ya ve el partido en curso
+    if (starts) this.lifecycle.notifyStarted(id);
     return this.findOne(id);
   }
 
