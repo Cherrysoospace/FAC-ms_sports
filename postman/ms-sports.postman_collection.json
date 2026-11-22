@@ -8452,6 +8452,76 @@
           }
         }
       ]
+    },
+    {
+      "name": "27 · Desarrollo del torneo (HU-GC-08b)",
+      "item": [
+        {
+          "name": "Desarrollo del torneo (estructura, tablas, llaves y anotaciones)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Corresponde solo al torneo seleccionado\", () => pm.expect(body.tournament.id).to.eql(Number(pm.collectionVariables.get(\"ferchoTournamentId\"))));",
+                  "pm.test(\"Trae resumen y fases\", () => { pm.expect(body.summary).to.have.property(\"pendingMatches\"); pm.expect(body.phases).to.be.an(\"array\"); });",
+                  "pm.test(\"Cada partido indica si tiene resultado y trae sus anotaciones\", () => {",
+                  "  const matches = body.phases.flatMap((p) => p.type === \"GROUP\" ? p.groups.flatMap((g) => g.matches) : p.ties.flatMap((t) => t.matches));",
+                  "  matches.forEach((m) => { pm.expect(m).to.have.property(\"hasResult\"); pm.expect(m.goals).to.be.an(\"array\"); });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/tournaments/{{ferchoTournamentId}}/development",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{ferchoTournamentId}}",
+                "development"
+              ]
+            }
+          }
+        },
+        {
+          "name": "[404] Desarrollo de torneo inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/tournaments/999999/development",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournaments",
+                "999999",
+                "development"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }

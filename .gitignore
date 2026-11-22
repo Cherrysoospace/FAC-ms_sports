@@ -61,3 +61,10 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 /tutoriales
 
 /context
+/.claude
+
+# Archivos de agentes locales (cada integrante tiene los suyos)
+AGENTS.md
+CLAUDE.md
+.claude/
+docs/historias/

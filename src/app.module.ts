@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { SportsModule } from './sports/sports.module';
 import { BallsModule } from './balls/balls.module';
 import { TournamentsModule } from './tournaments/tournaments.module';
+import { TournamentDevelopmentModule } from './tournament-development/tournament-development.module';
 import { PhasesModule } from './phases/phases.module';
 import { RegistrationsModule } from './registrations/registrations.module';
 import { TeamsModule } from './teams/teams.module';
@@ -48,6 +49,7 @@ import { BetsModule } from './bets/bets.module';
     SportsModule,
     BallsModule,
     TournamentsModule,
+    TournamentDevelopmentModule,
     PhasesModule,
     RegistrationsModule,
     TeamsModule,

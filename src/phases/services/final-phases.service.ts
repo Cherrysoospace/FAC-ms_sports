@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { FinalPhase } from '../entities/final-phase.entity';
-import { FinalRound } from '../enums/final-round.enum';
+import { FinalRound, ROUND_SEQUENCE } from '../enums/final-round.enum';
 import { TournamentsService } from '../../tournaments/tournaments.service';
 import { PhasesRepository } from '../repositories/phases.repository';
 import { PhaseRulesService } from './phase-rules.service';
@@ -16,17 +16,6 @@ import {
   ErrorCase,
   ResourceNotFoundException,
 } from '../../common/exceptions';
-
-// Posición de cada ronda en el cuadro eliminatorio. THIRD_PLACE y FINAL
-// tienen la misma posición: pueden compartir order (y no se restringen
-// entre sí).
-const ROUND_SEQUENCE: Record<FinalRound, number> = {
-  [FinalRound.ROUND_OF_16]: 1,
-  [FinalRound.QUARTER_FINAL]: 2,
-  [FinalRound.SEMI_FINAL]: 3,
-  [FinalRound.THIRD_PLACE]: 4,
-  [FinalRound.FINAL]: 4,
-};
 
 @Injectable()
 export class FinalPhasesService {
