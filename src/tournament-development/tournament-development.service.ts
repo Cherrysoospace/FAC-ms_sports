@@ -7,7 +7,10 @@ import {
   TournamentDevelopmentData,
   TournamentDevelopmentRepository,
 } from './repositories/tournament-development.repository';
-import { StandingsCalculator } from './policies/standings-calculator';
+import {
+  StandingRow,
+  StandingsCalculator,
+} from './policies/standings-calculator';
 import { BracketBuilder } from './policies/bracket-builder';
 import {
   ScoringTeam,
@@ -16,7 +19,14 @@ import {
 import { DevelopmentSummaryPolicy } from './policies/development-summary.policy';
 import { CurrentPhasePolicy } from './policies/current-phase.policy';
 import { EliminatedTeamsPolicy } from './policies/eliminated-teams.policy';
-import { TournamentDevelopmentMapper } from './mappers/tournament-development.mapper';
+import {
+  GroupParticipant,
+  GroupParticipantsPolicy,
+} from './policies/group-participants.policy';
+import {
+  TournamentDevelopmentMapper,
+  TournamentDevelopmentView,
+} from './mappers/tournament-development.mapper';
 import { TournamentDevelopmentResponseDto } from './dto/tournament-development-response.dto';
 
 /**
@@ -41,7 +51,7 @@ export class TournamentDevelopmentService {
     );
 
     const matchesByPhase = groupBy(data.matches, (match) => match.phase.id);
-    const teamsByGroup = groupBy(data.teams, (team) => team.group?.id ?? 0);
+    const teamsByGroup = this.participantsByGroup(data, matchesByPhase);
     const standingsByGroup = new Map(
       data.groups.map((group) => [
         group.id,
@@ -54,26 +64,7 @@ export class TournamentDevelopmentService {
 
     return TournamentDevelopmentMapper.toResponseDto({
       tournament,
-      summary: {
-        ...DevelopmentSummaryPolicy.summarize(
-          data.activeRegistrationsCount,
-          data.matches,
-          data.goals.length,
-        ),
-        currentPhase: CurrentPhasePolicy.resolve(
-          data.groups,
-          data.finals,
-          matchesByPhase,
-        ),
-        eliminatedTeams: EliminatedTeamsPolicy.resolve(
-          data.groups.map((group) => ({
-            qualifiersCount: group.qualifiersCount,
-            standings: standingsByGroup.get(group.id) ?? [],
-            matches: matchesByPhase.get(group.id) ?? [],
-          })),
-          data.finals.map((final) => matchesByPhase.get(final.id) ?? []),
-        ),
-      },
+      summary: this.buildSummary(data, matchesByPhase, standingsByGroup),
       groups: data.groups,
       teamsByGroup,
       standingsByGroup,
@@ -82,6 +73,51 @@ export class TournamentDevelopmentService {
       goalsByMatch: groupBy(data.goals, (goal) => goal.match.id),
       goalTeams: this.resolveGoalTeams(data),
     });
+  }
+
+  // Equipos asignados al grupo + los que jugaron sus partidos (GroupParticipantsPolicy).
+  private participantsByGroup(
+    data: TournamentDevelopmentData,
+    matchesByPhase: ReadonlyMap<number, Match[]>,
+  ): Map<number, GroupParticipant[]> {
+    const assignedByGroup = groupBy(data.teams, (team) => team.group?.id ?? 0);
+    return new Map(
+      data.groups.map((group) => [
+        group.id,
+        GroupParticipantsPolicy.resolve(
+          assignedByGroup.get(group.id) ?? [],
+          matchesByPhase.get(group.id) ?? [],
+        ),
+      ]),
+    );
+  }
+
+  // Conteos, fase actual y eliminados, con lo que ya se consultó y calculó.
+  private buildSummary(
+    data: TournamentDevelopmentData,
+    matchesByPhase: ReadonlyMap<number, Match[]>,
+    standingsByGroup: ReadonlyMap<number, StandingRow[]>,
+  ): TournamentDevelopmentView['summary'] {
+    return {
+      ...DevelopmentSummaryPolicy.summarize(
+        data.activeRegistrationsCount,
+        data.matches,
+        data.goals.length,
+      ),
+      currentPhase: CurrentPhasePolicy.resolve(
+        data.groups,
+        data.finals,
+        matchesByPhase,
+      ),
+      eliminatedTeams: EliminatedTeamsPolicy.resolve(
+        data.groups.map((group) => ({
+          qualifiersCount: group.qualifiersCount,
+          standings: standingsByGroup.get(group.id) ?? [],
+          matches: matchesByPhase.get(group.id) ?? [],
+        })),
+        data.finals.map((final) => matchesByPhase.get(final.id) ?? []),
+      ),
+    };
   }
 
   private resolveGoalTeams(

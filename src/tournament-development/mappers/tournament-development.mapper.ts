@@ -1,6 +1,6 @@
 import { Tournament } from '../../tournaments/entities/tournament.entity';
 import { GroupPhase } from '../../phases/entities/group-phase.entity';
-import { Team } from '../../teams/entities/team.entity';
+import { GroupParticipant } from '../policies/group-participants.policy';
 import { Match } from '../../matches/entities/match.entity';
 import { Goal } from '../../goals/entities/goal.entity';
 import { MatchMapper } from '../../matches/mappers/match.mapper';
@@ -34,7 +34,8 @@ export interface TournamentDevelopmentView {
     eliminatedTeams: EliminatedTeam[];
   };
   groups: GroupPhase[];
-  teamsByGroup: ReadonlyMap<number, Team[]>;
+  // Participantes de cada grupo (GroupParticipantsPolicy)
+  teamsByGroup: ReadonlyMap<number, GroupParticipant[]>;
   standingsByGroup: ReadonlyMap<number, StandingRow[]>;
   matchesByPhase: ReadonlyMap<number, Match[]>;
   bracket: BracketRound<Match>[];

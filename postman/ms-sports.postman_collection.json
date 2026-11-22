@@ -168,6 +168,10 @@
       "value": ""
     },
     {
+      "key": "developmentTournamentId",
+      "value": ""
+    },
+    {
       "key": "ferchoPhaseId",
       "value": ""
     },
@@ -8457,7 +8461,7 @@
       "name": "27 · Desarrollo del torneo (HU-GC-08b)",
       "item": [
         {
-          "name": "Desarrollo del torneo (estructura, tablas, llaves y anotaciones)",
+          "name": "Desarrollo del torneo de prueba (grupo, tabla, llave y anotaciones)",
           "event": [
             {
               "listen": "test",
@@ -8466,11 +8470,25 @@
                 "exec": [
                   "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
                   "const body = pm.response.json();",
-                  "pm.test(\"Corresponde solo al torneo seleccionado\", () => pm.expect(body.tournament.id).to.eql(Number(pm.collectionVariables.get(\"ferchoTournamentId\"))));",
-                  "pm.test(\"Trae resumen y fases\", () => { pm.expect(body.summary).to.have.property(\"pendingMatches\"); pm.expect(body.phases).to.be.an(\"array\"); });",
-                  "pm.test(\"Cada partido indica si tiene resultado y trae sus anotaciones\", () => {",
-                  "  const matches = body.phases.flatMap((p) => p.type === \"GROUP\" ? p.groups.flatMap((g) => g.matches) : p.ties.flatMap((t) => t.matches));",
-                  "  matches.forEach((m) => { pm.expect(m).to.have.property(\"hasResult\"); pm.expect(m.goals).to.be.an(\"array\"); });",
+                  "pm.test(\"Corresponde solo al torneo seleccionado\", () => pm.expect(body.tournament.id).to.eql(Number(pm.collectionVariables.get(\"developmentTournamentId\"))));",
+                  "pm.test(\"Resumen del escenario del seed\", () => {",
+                  "  pm.expect(body.summary).to.include({ teams: 3, matches: 4, finishedMatches: 3, pendingMatches: 1 });",
+                  "  pm.expect(body.summary.currentPhase).to.include({ type: \"GROUP\", groupName: \"A\" });",
+                  "  pm.expect(body.summary.eliminatedTeams.map((t) => t.name)).to.include(\"Seed Búhos\");",
+                  "});",
+                  "const groupStage = body.phases.find((p) => p.type === \"GROUP\");",
+                  "const finalRound = body.phases.find((p) => p.type === \"FINAL\");",
+                  "pm.test(\"Grupo A con 3 equipos en la tabla y 3 partidos\", () => {",
+                  "  const group = groupStage.groups[0];",
+                  "  pm.expect(group.standings).to.have.lengthOf(3);",
+                  "  pm.expect(group.matches).to.have.lengthOf(3);",
+                  "  pm.expect(group.matches.filter((m) => m.hasResult)).to.have.lengthOf(2);",
+                  "  pm.expect(group.matches.find((m) => !m.hasResult).goals.length).to.be.above(0);",
+                  "});",
+                  "pm.test(\"Final con una llave resuelta\", () => {",
+                  "  const [tie] = finalRound.ties;",
+                  "  pm.expect(tie.winner.name).to.eql(\"Seed Águilas\");",
+                  "  pm.expect(tie.matches[0].goals).to.have.lengthOf(3);",
                   "});"
                 ]
               }
@@ -8480,16 +8498,17 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{sportsUrl}}/tournaments/{{ferchoTournamentId}}/development",
+              "raw": "{{sportsUrl}}/tournaments/{{developmentTournamentId}}/development",
               "host": [
                 "{{sportsUrl}}"
               ],
               "path": [
                 "tournaments",
-                "{{ferchoTournamentId}}",
+                "{{developmentTournamentId}}",
                 "development"
               ]
-            }
+            },
+            "description": "Requiere {{developmentTournamentId}}: ejecute `npm run seed:development` en ms-sports y copie el id que imprime (\"developmentTournamentId = <id>\"). Ver la descripción de la carpeta."
           }
         },
         {
@@ -8521,7 +8540,8 @@
             }
           }
         }
-      ]
+      ],
+      "description": "HU-GC-08b. Para el caso 200 cargue primero el escenario de prueba con `npm run seed:development` (en ms-sports). El script crea el torneo \"Copa Desarrollo (seed)\" (grupo A con 3 equipos: 2 partidos FINISHED y 1 en curso con anotaciones; final con 1 partido FINISHED) e imprime `developmentTournamentId = <id>`. Copie ese id en la variable de colección {{developmentTournamentId}}. Si el torneo ya existe, el script solo vuelve a imprimir su id."
     }
   ]
 }
