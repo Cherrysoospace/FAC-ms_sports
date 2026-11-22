@@ -40,4 +40,11 @@ export class PlayerQueryDto {
   @IsInt({ message: 'El deporte debe ser un número entero' })
   @Min(1, { message: 'El identificador del deporte no es válido' })
   sportId?: number;
+
+  // HU-GD-07: jugadores que poseen esa habilidad
+  @Type(() => Number)
+  @IsOptional()
+  @IsInt({ message: 'La habilidad debe ser un número entero' })
+  @Min(1, { message: 'El identificador de la habilidad no es válido' })
+  skillId?: number;
 }

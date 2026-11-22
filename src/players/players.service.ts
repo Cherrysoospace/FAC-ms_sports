@@ -92,14 +92,22 @@ export class PlayersService {
   async remove(id: number): Promise<{ message: string }> {
     const player = await this.getPlayerOrFail(id);
 
-    const [contracts, skills] = await Promise.all([
+    const [contracts, skills, goals, positions] = await Promise.all([
       this.playersRepository.countContracts(id),
       this.playersRepository.countSkills(id),
+      this.playersRepository.countGoals(id),
+      this.playersRepository.countMatchPositions(id),
     ]);
 
     const dependencies = [
       plural(contracts, 'contrato con equipos', 'contratos con equipos'),
       plural(skills, 'habilidad', 'habilidades'),
+      plural(goals, 'anotación', 'anotaciones'),
+      plural(
+        positions,
+        'posición registrada en partidos',
+        'posiciones registradas en partidos',
+      ),
     ].filter((d): d is string => d !== null);
 
     if (dependencies.length > 0) {

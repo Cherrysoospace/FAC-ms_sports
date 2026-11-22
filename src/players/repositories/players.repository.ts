@@ -6,6 +6,8 @@ import { TeamPlayer } from '../../team-players/entities/team-player.entity';
 import { ContractStage } from '../../team-players/enums/contract-stage.enum';
 import { contractStageCondition } from '../../team-players/repositories/contract-stage.sql';
 import { PlayerSkill } from '../../player-skills/entities/player-skill.entity';
+import { Goal } from '../../goals/entities/goal.entity';
+import { MatchPosition } from '../../match-positions/entities/match-position.entity';
 import { PlayerQueryDto } from '../dto/player-query.dto';
 import { PlayerTeamSummaryDto } from '../dto/player-response.dto';
 import { escapeLike } from '../../common/database/query.util';
@@ -26,6 +28,10 @@ export class PlayersRepository {
     private readonly teamPlayerRepository: Repository<TeamPlayer>,
     @InjectRepository(PlayerSkill)
     private readonly playerSkillRepository: Repository<PlayerSkill>,
+    @InjectRepository(Goal)
+    private readonly goalRepository: Repository<Goal>,
+    @InjectRepository(MatchPosition)
+    private readonly matchPositionRepository: Repository<MatchPosition>,
   ) {}
 
   findByFilters(query: PlayerQueryDto): Promise<Player[]> {
@@ -71,6 +77,14 @@ export class PlayersRepository {
           'INNER JOIN team_sports ts ON ts.team_id = tp.team_id ' +
           `WHERE tp.player_id = player.id AND ts.sport_id = :sportId AND ${current.sql})`,
         { sportId: query.sportId, ...current.params },
+      );
+    }
+    // HU-GD-07: jugadores que poseen esa habilidad
+    if (query.skillId !== undefined) {
+      qb.andWhere(
+        'EXISTS (SELECT 1 FROM player_skills ps ' +
+          'WHERE ps.player_id = player.id AND ps.skill_id = :skillId)',
+        { skillId: query.skillId },
       );
     }
 
@@ -129,6 +143,18 @@ export class PlayersRepository {
 
   countSkills(playerId: number): Promise<number> {
     return this.playerSkillRepository.count({
+      where: { player: { id: playerId } },
+    });
+  }
+
+  // Anotaciones registradas a su nombre (historial de partidos).
+  countGoals(playerId: number): Promise<number> {
+    return this.goalRepository.count({ where: { player: { id: playerId } } });
+  }
+
+  // Posiciones registradas en la pizarra (HU-GC-09).
+  countMatchPositions(playerId: number): Promise<number> {
+    return this.matchPositionRepository.count({
       where: { player: { id: playerId } },
     });
   }

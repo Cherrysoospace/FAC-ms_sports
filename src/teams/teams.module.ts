@@ -5,6 +5,7 @@ import { TeamSport } from '../team-sports/entities/team-sport.entity';
 import { Registration } from '../registrations/entities/registration.entity';
 import { Match } from '../matches/entities/match.entity';
 import { TeamPlayer } from '../team-players/entities/team-player.entity';
+import { FanTeam } from '../fans/entities/fan-team.entity';
 import { TeamsController } from './teams.controller';
 import { TeamsService } from './teams.service';
 import { TeamsRepository } from './repositories/teams.repository';
@@ -17,6 +18,7 @@ import { TeamsRepository } from './repositories/teams.repository';
       Registration,
       Match,
       TeamPlayer,
+      FanTeam,
     ]),
   ],
   controllers: [TeamsController],

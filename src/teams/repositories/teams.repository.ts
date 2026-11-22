@@ -8,6 +8,7 @@ import { Registration } from '../../registrations/entities/registration.entity';
 import { RegistrationStatus } from '../../registrations/enums/registration-status.enum';
 import { Match } from '../../matches/entities/match.entity';
 import { TeamPlayer } from '../../team-players/entities/team-player.entity';
+import { FanTeam } from '../../fans/entities/fan-team.entity';
 import { ContractStage } from '../../team-players/enums/contract-stage.enum';
 import { contractStageCondition } from '../../team-players/repositories/contract-stage.sql';
 import { TournamentStatusPolicy } from '../../tournaments/policies/tournament-status.policy';
@@ -39,6 +40,8 @@ export class TeamsRepository {
     private readonly matchRepository: Repository<Match>,
     @InjectRepository(TeamPlayer)
     private readonly teamPlayerRepository: Repository<TeamPlayer>,
+    @InjectRepository(FanTeam)
+    private readonly fanTeamRepository: Repository<FanTeam>,
   ) {}
 
   findByFilters(query: TeamQueryDto): Promise<Team[]> {
@@ -203,5 +206,10 @@ export class TeamsRepository {
       .innerJoin('team.relatedTeams', 'related')
       .where('team.id = :teamId', { teamId })
       .getCount();
+  }
+
+  // Aficionados que lo tienen como favorito (fan_teams).
+  countFanTeams(teamId: number): Promise<number> {
+    return this.fanTeamRepository.count({ where: { team: { id: teamId } } });
   }
 }
