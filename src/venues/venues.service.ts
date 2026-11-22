@@ -68,6 +68,11 @@ export class VenuesService {
     return this.venuesRepository.findAncestorIds(id);
   }
 
+  // Lo mismo para varios escenarios en una sola consulta: Map<id, ancestros>.
+  findAncestorIdsMany(ids: readonly number[]): Promise<Map<number, number[]>> {
+    return this.venuesRepository.findAncestorIdsMany(ids);
+  }
+
   async create(dto: CreateVenueDto): Promise<VenueResponseDto> {
     const parent =
       dto.parentId != null ? await this.getActiveParent(dto.parentId) : null;

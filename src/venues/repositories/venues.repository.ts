@@ -9,6 +9,7 @@ import { TournamentVenue } from '../../tournament-venues/entities/tournament-ven
 import { VenueQueryDto } from '../dto/venue-query.dto';
 import { VenueStats } from '../types/venue-stats';
 import { escapeLike } from '../../common/database/query.util';
+import { findAncestorIdsMany } from '../../common/database/hierarchy.util';
 
 interface StatsRow {
   id: number | string;
@@ -79,31 +80,15 @@ export class VenuesRepository {
     return qb.getOne();
   }
 
-  // Ids de los ancestros de `id` (padre, abuelo, ... hasta la raíz).
-  // Se corta si encuentra un id repetido, por si ya hubiera un ciclo en datos.
+  // Ids de los ancestros de `id` (padre, abuelo, ... hasta la raíz), en una
+  // sola consulta. Se corta si encuentra un id repetido (ciclo en datos).
   async findAncestorIds(id: number): Promise<number[]> {
-    const ancestors: number[] = [];
-    const visited = new Set<number>([id]);
-    let currentId: number | null = id;
+    return (await this.findAncestorIdsMany([id])).get(id) ?? [];
+  }
 
-    while (currentId !== null) {
-      const row: { parentId: number | null } | undefined =
-        await this.venueRepository
-          .createQueryBuilder('venue')
-          .select('venue.parent_id', 'parentId')
-          .where('venue.id = :id', { id: currentId })
-          .getRawOne();
-
-      const parentId: number | null =
-        row?.parentId != null ? Number(row.parentId) : null;
-      if (parentId === null || visited.has(parentId)) break;
-
-      ancestors.push(parentId);
-      visited.add(parentId);
-      currentId = parentId;
-    }
-
-    return ancestors;
+  // Lo mismo para varios ids a la vez, también en una sola consulta.
+  findAncestorIdsMany(ids: readonly number[]): Promise<Map<number, number[]>> {
+    return findAncestorIdsMany(this.venueRepository, ids);
   }
 
   // Localidades (todas) y capacidad total (solo las activas) por escenario,

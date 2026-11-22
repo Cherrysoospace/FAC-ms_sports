@@ -5,6 +5,7 @@ import { Sport } from '../entities/sport.entity';
 import { Tournament } from '../../tournaments/entities/tournament.entity';
 import { TeamSport } from '../../team-sports/entities/team-sport.entity';
 import { SportQueryDto } from '../dto/sport-query.dto';
+import { findAncestorIdsMany } from '../../common/database/hierarchy.util';
 
 // Consultas propias del módulo de deportes.
 @Injectable()
@@ -64,29 +65,14 @@ export class SportsRepository {
     return this.teamSportRepository.count({ where: { sport: { id } } });
   }
 
-  // Ids de los ancestros de `id` (padre, abuelo, ... hasta la raíz).
-  // Se corta si encuentra un id repetido, por si ya hubiera un ciclo en datos.
+  // Ids de los ancestros de `id` (padre, abuelo, ... hasta la raíz), en una
+  // sola consulta. Se corta si encuentra un id repetido (ciclo en datos).
   async findAncestorIds(id: number): Promise<number[]> {
-    const ancestors: number[] = [];
-    const visited = new Set<number>([id]);
-    let currentId: number | null = id;
+    return (await this.findAncestorIdsMany([id])).get(id) ?? [];
+  }
 
-    while (currentId !== null) {
-      const row: { parentId: number | null } | undefined =
-        await this.sportRepository
-          .createQueryBuilder('sport')
-          .select('sport.parent_id', 'parentId')
-          .where('sport.id = :id', { id: currentId })
-          .getRawOne();
-
-      const parentId: number | null = row?.parentId != null ? Number(row.parentId) : null;
-      if (parentId === null || visited.has(parentId)) break;
-
-      ancestors.push(parentId);
-      visited.add(parentId);
-      currentId = parentId;
-    }
-
-    return ancestors;
+  // Lo mismo para varios ids a la vez, también en una sola consulta.
+  findAncestorIdsMany(ids: readonly number[]): Promise<Map<number, number[]>> {
+    return findAncestorIdsMany(this.sportRepository, ids);
   }
 }

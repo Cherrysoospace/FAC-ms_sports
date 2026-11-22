@@ -138,7 +138,8 @@ describe('TournamentVenuesService: partidos que dependen de una asociación', ()
       } as unknown as TournamentVenuesRepository,
       {} as TournamentsService,
       {
-        findAncestorIds: async (venueId: number) => ancestorsOf(venueId),
+        findAncestorIdsMany: async (venueIds: readonly number[]) =>
+          new Map(venueIds.map((venueId) => [venueId, ancestorsOf(venueId)])),
       } as unknown as VenuesService,
     );
   });

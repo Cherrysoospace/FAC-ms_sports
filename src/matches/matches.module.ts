@@ -19,6 +19,8 @@ import { MatchesService } from './matches.service';
 import { MatchesRepository } from './repositories/matches.repository';
 import { MatchAudienceRepository } from './repositories/match-audience.repository';
 import { MatchNotifier } from './match-notifier';
+import { MatchDraftResolver } from './services/match-draft.resolver';
+import { MatchResultService } from './services/match-result.service';
 
 @Module({
   imports: [
@@ -41,6 +43,8 @@ import { MatchNotifier } from './match-notifier';
   controllers: [MatchesController],
   providers: [
     MatchesService,
+    MatchDraftResolver,
+    MatchResultService,
     MatchesRepository,
     MatchAudienceRepository,
     {

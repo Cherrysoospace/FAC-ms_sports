@@ -167,13 +167,14 @@ export class TournamentVenuesService {
         [...matchCounts.keys()].map((key) => Number(key.split('-')[1])),
       ),
     ];
+    // Una sola consulta para los ancestros de todos los escenarios.
+    const ancestorsByVenue =
+      await this.venuesService.findAncestorIdsMany(matchVenueIds);
     const pathByVenue = new Map<number, number[]>(
-      await Promise.all(
-        matchVenueIds.map(async (id): Promise<[number, number[]]> => [
-          id,
-          [id, ...(await this.venuesService.findAncestorIds(id))],
-        ]),
-      ),
+      matchVenueIds.map((id) => [
+        id,
+        [id, ...(ancestorsByVenue.get(id) ?? [])],
+      ]),
     );
 
     for (const { tournamentId, venueId } of pairs) {

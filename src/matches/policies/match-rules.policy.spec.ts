@@ -1,5 +1,6 @@
 import { MatchRulesPolicy } from './match-rules.policy';
 import { MatchStatus } from '../enums/match-status.enum';
+import { TournamentStatus } from '../../tournaments/enums/tournament-status.enum';
 
 describe('MatchRulesPolicy', () => {
   it('rechaza que un equipo juegue contra sí mismo', () => {
@@ -114,5 +115,80 @@ describe('MatchRulesPolicy', () => {
     expect(() =>
       MatchRulesPolicy.assertAnnotationsAllowed(MatchStatus.CANCELLED),
     ).toThrow('cancelado');
+  });
+});
+
+describe('MatchRulesPolicy: apuestas y torneo cerrado', () => {
+  const open = { name: 'Copa Caldas', status: TournamentStatus.IN_PROGRESS };
+  const closed = { name: 'Copa Caldas', status: TournamentStatus.FINISHED };
+
+  it('assertTournamentOpen: mensaje con el torneo y la consecuencia', () => {
+    expect(() =>
+      MatchRulesPolicy.assertTournamentOpen(open, 'no se puede'),
+    ).not.toThrow();
+    expect(() =>
+      MatchRulesPolicy.assertTournamentOpen(
+        { ...closed, status: TournamentStatus.CANCELLED },
+        'no se le pueden programar partidos',
+      ),
+    ).toThrow(
+      'El torneo Copa Caldas ya terminó o fue cancelado: no se le pueden programar partidos',
+    );
+  });
+
+  it('assertBettingChange: solo con el partido programado', () => {
+    expect(() =>
+      MatchRulesPolicy.assertBettingChange(
+        MatchStatus.IN_PROGRESS,
+        MatchStatus.IN_PROGRESS,
+        false,
+        open,
+      ),
+    ).toThrow('partidos programados');
+  });
+
+  it('assertBettingChange: no deja apuestas abiertas si el mismo cambio inicia o cancela', () => {
+    for (const next of [MatchStatus.IN_PROGRESS, MatchStatus.CANCELLED]) {
+      expect(() =>
+        MatchRulesPolicy.assertBettingChange(
+          MatchStatus.SCHEDULED,
+          next,
+          true,
+          open,
+        ),
+      ).toThrow(
+        'No se pueden dejar las apuestas abiertas al iniciar o cancelar el partido',
+      );
+    }
+    // Cerrarlas al iniciar sí se permite
+    expect(() =>
+      MatchRulesPolicy.assertBettingChange(
+        MatchStatus.SCHEDULED,
+        MatchStatus.IN_PROGRESS,
+        false,
+        open,
+      ),
+    ).not.toThrow();
+  });
+
+  it('assertBettingChange: no reabre apuestas en torneo cerrado, pero sí deja cerrarlas', () => {
+    expect(() =>
+      MatchRulesPolicy.assertBettingChange(
+        MatchStatus.SCHEDULED,
+        MatchStatus.SCHEDULED,
+        true,
+        closed,
+      ),
+    ).toThrow(
+      'El torneo Copa Caldas ya terminó o fue cancelado: no se pueden reabrir apuestas',
+    );
+    expect(() =>
+      MatchRulesPolicy.assertBettingChange(
+        MatchStatus.SCHEDULED,
+        MatchStatus.SCHEDULED,
+        false,
+        closed,
+      ),
+    ).not.toThrow();
   });
 });

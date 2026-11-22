@@ -11,6 +11,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { MatchesService } from './matches.service';
+import { MatchResultService } from './services/match-result.service';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 import { MatchQueryDto } from './dto/match-query.dto';
@@ -19,7 +20,10 @@ import { RecordMatchResultDto } from './dto/record-match-result.dto';
 // HU-GC-06 y resultado final PUT /matches/:id/result de HU-GC-07 (Fercho).
 @Controller('matches')
 export class MatchesController {
-  constructor(private readonly matchesService: MatchesService) {}
+  constructor(
+    private readonly matchesService: MatchesService,
+    private readonly matchResultService: MatchResultService,
+  ) {}
 
   @Get()
   findAll(@Query() query: MatchQueryDto) {
@@ -48,7 +52,7 @@ export class MatchesController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: RecordMatchResultDto,
   ) {
-    return this.matchesService.recordResult(id, dto);
+    return this.matchResultService.recordResult(id, dto);
   }
 
   @Delete(':id')

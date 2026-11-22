@@ -130,15 +130,12 @@ export class RegistrationsService {
 
       const now = new Date();
       const newRegistrations: Registration[] = [];
+      // Retiradas antes: la restricción única obliga a reactivar la fila.
+      const reactivatedIds: number[] = [];
       for (const teamId of dto.teamIds) {
         const previous = registrationByTeam.get(teamId);
         if (previous) {
-          // Retirada antes: la restricción única obliga a reactivar la fila.
-          await manager.update(Registration, previous.id, {
-            status: RegistrationStatus.ACTIVE,
-            withdrawnAt: () => 'NULL',
-            registeredAt: now,
-          });
+          reactivatedIds.push(previous.id);
         } else {
           const team = teamsById.get(teamId);
           if (team) {
@@ -147,6 +144,18 @@ export class RegistrationsService {
             );
           }
         }
+      }
+      // Un solo UPDATE ... WHERE id IN (...) para todas las reactivaciones.
+      if (reactivatedIds.length > 0) {
+        await manager.update(
+          Registration,
+          { id: In(reactivatedIds) },
+          {
+            status: RegistrationStatus.ACTIVE,
+            withdrawnAt: () => 'NULL',
+            registeredAt: now,
+          },
+        );
       }
       if (newRegistrations.length > 0) await manager.save(newRegistrations);
     });

@@ -112,6 +112,10 @@
       "value": ""
     },
     {
+      "key": "tournamentDisposableId",
+      "value": ""
+    },
+    {
       "key": "tournamentVenueId",
       "value": ""
     },
@@ -1537,6 +1541,77 @@
               "path": [
                 "team-sports",
                 "{{teamSportId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Retirar deporte del equipo B",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Confirma el retiro', () => pm.expect(pm.response.json().message).to.include('Se retiró'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/team-sports/{{teamSport2Id}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-sports",
+                "{{teamSport2Id}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Volver a asociar deporte al equipo B",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('teamSport2Id', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamId\": {{team2Id}},\n  \"sportId\": {{sportId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/team-sports",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "team-sports"
               ]
             }
           }
@@ -3557,6 +3632,77 @@
               "path": [
                 "tournaments",
                 "{{tournamentId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear torneo temporal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) pm.collectionVariables.set('tournamentDisposableId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Copa temporal {{runId}}\",\n  \"sportId\": {{sportId}},\n  \"startDate\": \"{{tournamentStart}}\",\n  \"endDate\": \"{{tournamentEnd}}\",\n  \"registrationOpensAt\": \"{{registrationOpensAt}}\",\n  \"registrationClosesAt\": \"{{registrationClosesAt}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{sportsUrl}}/tournaments",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournaments"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar torneo temporal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Confirma la eliminación', () => pm.expect(pm.response.json().message).to.include('eliminado correctamente'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{sportsUrl}}/tournaments/{{tournamentDisposableId}}",
+              "host": [
+                "{{sportsUrl}}"
+              ],
+              "path": [
+                "tournaments",
+                "{{tournamentDisposableId}}"
               ]
             }
           }

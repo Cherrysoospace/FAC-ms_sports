@@ -8,15 +8,13 @@ import { BetStatus } from '../bets/enums/bet-status.enum';
 import { Goal } from '../goals/entities/goal.entity';
 import { GroupPhase } from '../phases/entities/group-phase.entity';
 import { TournamentStatus } from '../tournaments/enums/tournament-status.enum';
-import type { BallsService } from '../balls/balls.service';
-import type { TeamsService } from '../teams/teams.service';
-import type { TournamentVenuesService } from '../tournament-venues/tournament-venues.service';
-import type { VenuesService } from '../venues/venues.service';
 import { Match } from './entities/match.entity';
 import { MatchStatus } from './enums/match-status.enum';
 import type { MatchNotifier } from './match-notifier';
 import { MatchesService } from './matches.service';
 import type { MatchesRepository } from './repositories/matches.repository';
+import type { MatchDraftResolver } from './services/match-draft.resolver';
+import { MatchResultService } from './services/match-result.service';
 
 function createMatchEntity(
   overrides: Partial<{
@@ -97,17 +95,23 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
     },
   ];
 
+  // Resultado final y cancelación con liquidación (MatchResultService)
+  const buildResultService = (withBetPort = true) =>
+    new MatchResultService(
+      matchesRepository as unknown as MatchesRepository,
+      matchNotifier as unknown as MatchNotifier,
+      dataSource as unknown as DataSource,
+      withBetPort ? betSettlementPort : undefined,
+    );
+
+  // CRUD de partidos; las validaciones de equipos/escenario/pelota no se usan aquí
   const buildService = (withBetPort = true) =>
     new MatchesService(
       matchRepository as unknown as Repository<Match>,
       matchesRepository as unknown as MatchesRepository,
-      {} as TeamsService,
-      {} as VenuesService,
-      {} as BallsService,
-      {} as TournamentVenuesService,
+      {} as MatchDraftResolver,
+      buildResultService(withBetPort),
       matchNotifier as unknown as MatchNotifier,
-      dataSource as unknown as DataSource,
-      withBetPort ? betSettlementPort : undefined,
     );
 
   beforeEach(() => {
@@ -189,7 +193,7 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
       matchesRepository.findGoalsForSummary.mockResolvedValueOnce(summaryGoals);
       txManager.findOne.mockResolvedValueOnce(locked);
 
-      const service = buildService(true);
+      const service = buildResultService(true);
       const result = await service.recordResult(10, {
         homeScore: 2,
         awayScore: 1,
@@ -253,7 +257,7 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
         .mockResolvedValueOnce(corrected);
       txManager.findOne.mockResolvedValueOnce(locked);
 
-      const service = buildService(true);
+      const service = buildResultService(true);
       const result = await service.recordResult(10, {
         homeScore: 2,
         awayScore: 0,
@@ -282,7 +286,7 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
         .mockResolvedValueOnce(finished);
       txManager.findOne.mockResolvedValueOnce(locked);
 
-      const service = buildService(false);
+      const service = buildResultService(false);
       await expect(
         service.recordResult(10, { homeScore: 0, awayScore: 0 }),
       ).resolves.toMatchObject({ status: MatchStatus.FINISHED });
@@ -294,7 +298,7 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
     });
 
     it('rechaza registrar resultado si el partido está SCHEDULED, CANCELLED o en torneo cerrado', async () => {
-      const service = buildService(true);
+      const service = buildResultService(true);
 
       matchesRepository.findOneWithRelations.mockResolvedValueOnce(
         createMatchEntity({ status: MatchStatus.SCHEDULED }),
@@ -432,7 +436,9 @@ describe('MatchesService (HU-GC-07 resultado y bloqueo por anotaciones)', () => 
       txManager.findOne.mockResolvedValueOnce(locked);
 
       const service = buildService(true);
-      const result = await service.update(10, { status: MatchStatus.CANCELLED });
+      const result = await service.update(10, {
+        status: MatchStatus.CANCELLED,
+      });
 
       expect(txManager.findOne).toHaveBeenCalledWith(Match, {
         where: { id: 10 },

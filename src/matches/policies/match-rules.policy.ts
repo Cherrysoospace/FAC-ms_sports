@@ -1,6 +1,14 @@
 import { MatchStatus } from '../enums/match-status.enum';
 import { ApplicationException, ErrorCase } from '../../common/exceptions';
 import { toDateOnly } from '../../common/dates/date-only';
+import { TournamentStatus } from '../../tournaments/enums/tournament-status.enum';
+import { TournamentStatusPolicy } from '../../tournaments/policies/tournament-status.policy';
+
+// Lo que las reglas necesitan del torneo del partido.
+export interface ClosableTournament {
+  name: string;
+  status: TournamentStatus;
+}
 
 export const MATCH_STATUS_LABELS: Record<MatchStatus, string> = {
   [MatchStatus.SCHEDULED]: 'programado',
@@ -74,6 +82,47 @@ export class MatchRulesPolicy {
         ErrorCase.INVALID_OPERATION,
         `El partido está ${MATCH_STATUS_LABELS[status]}: solo se pueden ` +
           'abrir o cerrar apuestas en partidos programados',
+      );
+    }
+  }
+
+  /**
+   * HU-GC-11: cambio manual de bettingOpen por PATCH.
+   * - Solo con el partido programado (assertBettingToggleAllowed).
+   * - No se puede dejar abiertas si el mismo PATCH lo inicia o lo cancela.
+   * - No se reabren si el torneo ya terminó o fue cancelado.
+   */
+  static assertBettingChange(
+    currentStatus: MatchStatus,
+    nextStatus: MatchStatus,
+    bettingOpen: boolean,
+    tournament: ClosableTournament,
+  ): void {
+    MatchRulesPolicy.assertBettingToggleAllowed(currentStatus);
+    if (nextStatus !== MatchStatus.SCHEDULED && bettingOpen) {
+      throw new ApplicationException(
+        ErrorCase.INVALID_OPERATION,
+        'No se pueden dejar las apuestas abiertas al iniciar o cancelar el partido',
+      );
+    }
+    if (bettingOpen) {
+      MatchRulesPolicy.assertTournamentOpen(
+        tournament,
+        'no se pueden reabrir apuestas',
+      );
+    }
+  }
+
+  // Un torneo finalizado o cancelado no admite cambios en sus partidos.
+  // `consequence` completa el mensaje: "El torneo X ya terminó o fue cancelado: <consequence>".
+  static assertTournamentOpen(
+    tournament: ClosableTournament,
+    consequence: string,
+  ): void {
+    if (TournamentStatusPolicy.isClosed(tournament.status)) {
+      throw new ApplicationException(
+        ErrorCase.INVALID_OPERATION,
+        `El torneo ${tournament.name} ya terminó o fue cancelado: ${consequence}`,
       );
     }
   }
