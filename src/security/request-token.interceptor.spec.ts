@@ -24,7 +24,7 @@ class TokenEchoService {
 
 @Controller('test-token')
 class TokenEchoController {
-  constructor(private readonly service: TokenEchoService) { }
+  constructor(private readonly service: TokenEchoService) {}
 
   @Get()
   async getToken() {
@@ -111,5 +111,6 @@ describe('RequestTokenInterceptor', () => {
     } finally {
       await app.close();
     }
-  });
+    // Levanta una app Nest real: con todas las suites en paralelo supera los 5 s por defecto.
+  }, 30_000);
 });
